@@ -1647,6 +1647,12 @@
 
         async function showGenerator() {
             // Hide other sections
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('feed-container').innerHTML = '';
+            document.getElementById('filter-section').style.display = 'none';
+            document.getElementById('load-more-btn').style.display = 'none';
+
+            // Show generator
             document.getElementById('generator-container').style.display = 'block';
 
             // Show close button
