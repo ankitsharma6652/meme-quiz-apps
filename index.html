@@ -8,7 +8,9 @@
     <meta name="description" content="Discover the hottest viral memes and videos from across the internet.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0a0a0c;
@@ -761,6 +763,16 @@
 
         function renderMemes() {
             const container = document.getElementById('feed-container');
+            // Don't clear container if appending, but for now we rebuild or append logic is handled in loadMemes
+            // Actually loadMemes clears it if not append.
+            // We need to be careful not to duplicate if we are just re-rendering.
+            // For simplicity, we will clear and re-render everything or just append new ones?
+            // The current logic in loadMemes clears it if !append.
+            // So here we should just render 'allMemes'. 
+            // Wait, renderMemes is called with no args and renders 'allMemes'.
+            // This is fine for small lists, but for infinite scroll it might be heavy.
+            // Let's stick to the current pattern but optimize the video player.
+
             container.innerHTML = '';
 
             let filtered = allMemes.filter(meme => {
@@ -777,9 +789,10 @@
 
             if (filtered.length === 0) {
                 container.innerHTML = `
-                    <div style="text-align:center; padding:3rem; width:100%;">
-                        <p style="font-size:1.5rem; margin-bottom:1rem;">😕 No ${currentFilters.mediaType} found.</p>
-                        <p style="color:#aaa;">Try switching the filter to "All Content" or load more memes.</p>
+                    <div style="text-align:center; padding:4rem 1rem; color:#666;">
+                        <div style="font-size:3rem; margin-bottom:1rem;">😕</div>
+                        <h3>No memes found</h3>
+                        <p>Try changing your filters or check back later!</p>
                     </div>
                 `;
                 return;
@@ -788,117 +801,102 @@
             filtered.forEach(meme => {
                 const card = document.createElement('div');
                 card.className = 'meme-card';
+                card.innerHTML = `
+                    <div class="meme-header">
+                        <div class="meme-author">
+                            <div class="author-avatar">${meme.author ? meme.author[0].toUpperCase() : 'U'}</div>
+                            <div class="author-info">
+                                <span class="author-name">u/${meme.author}</span>
+                                <span class="meme-source">${meme.source}</span>
+                            </div>
+                        </div>
+                        <div class="meme-actions">
+                            <button class="action-btn" onclick="shareMeme('${meme.url}')">↗️</button>
+                        </div>
+                    </div>
+                    <div class="meme-title">${meme.title}</div>
+                `;
 
-                // Use meme_id if available (from favorites), otherwise use id
-                const memeId = meme.meme_id || meme.id;
-                const isFav = userFavorites.has(memeId);
-
-                // Debug logging (remove after fixing)
-                if (isFav) {
-                    console.log(`Meme "${meme.title}" is favorited. ID: ${memeId}`);
-                }
-
+                const isFav = userFavorites.has(meme.meme_id || meme.id);
                 const heartIcon = isFav ? '❤️' : '🤍';
                 const activeClass = isFav ? 'active' : '';
 
-                // Custom Sync Player (Video + Audio + Multi-Quality)
-                const uniqueId = `player-${meme.id}`;
-                const audioSrc = `https://v.redd.it/${meme.id}/DASH_audio.mp4`;
+                // HLS Video Player
+                const hlsUrl = `https://v.redd.it/${meme.id}/HLSPlaylist.m3u8`;
+                const uniqueId = `hls-${meme.id}`;
 
                 const mediaContent = meme.is_video ? `
-                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden;" class="custom-player" id="${uniqueId}">
+                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden; min-height:300px;">
                         <video 
-                            id="${uniqueId}-video"
+                            id="${uniqueId}" 
+                            class="hls-video" 
+                            data-hls-url="${hlsUrl}"
+                            controls 
                             playsinline 
                             loop
                             poster="${meme.url}"
-                            referrerpolicy="no-referrer"
-                            style="width:100%; max-height:600px; object-fit:contain; display:block; cursor:pointer;"
-                            onclick="togglePlay('${uniqueId}')"
-                            onerror="console.error('Video error:', this.error)"
-                        >
-                            <!-- Try multiple qualities -->
-                            <source src="https://v.redd.it/${meme.id}/DASH_1080.mp4" type="video/mp4">
-                            <source src="https://v.redd.it/${meme.id}/DASH_720.mp4" type="video/mp4">
-                            <source src="https://v.redd.it/${meme.id}/DASH_480.mp4" type="video/mp4">
-                            <source src="https://v.redd.it/${meme.id}/DASH_360.mp4" type="video/mp4">
-                            <source src="https://v.redd.it/${meme.id}/DASH_240.mp4" type="video/mp4">
-                        </video>
-                        
-                        <audio id="${uniqueId}-audio" loop style="display:none;">
-                            <source src="${audioSrc}" type="audio/mp4">
-                        </audio>
-
-                        <!-- Custom Controls Overlay -->
-                        <div id="${uniqueId}-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none; transition:opacity 0.3s;">
-                            <div style="background:rgba(0,0,0,0.6); border-radius:50%; padding:1.5rem; display:flex; align-items:center; justify-content:center;">
-                                <span style="font-size:2rem;">▶️</span>
-                            </div>
-                        </div>
-
-                        <!-- Mute Toggle -->
-                        <button onclick="toggleMute(event, '${uniqueId}')" style="position:absolute; bottom:15px; right:15px; background:rgba(0,0,0,0.6); border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; color:white; font-size:1.2rem; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">
-                            <span id="${uniqueId}-mute-icon">🔇</span>
-                        </button>
+                            style="width:100%; height:100%; max-height:600px; object-fit:contain;"
+                        ></video>
                     </div>
                 ` : `
                     <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage unavailable%3C/text%3E%3C/svg%3E'">
                 `;
 
-                card.innerHTML = `
-                    <div class="meme-header">
-                        <div class="meme-title">${meme.title}</div>
-                        <button class="fav-btn ${activeClass}" onclick='toggleFavorite(${JSON.stringify(meme).replace(/'/g, "&#39;")}, this)'>${heartIcon}</button>
-                    </div>
-                    <div class="meme-media">
-                        ${mediaContent}
-                    </div>
-                    <div class="meme-footer" style="justify-content:flex-end;">
-                        <button onclick='downloadMeme("${meme.url || meme.video_url || meme.meme_url}", "${meme.title}", ${meme.is_video})' style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0.5rem 1rem; border-radius:20px; cursor:pointer; font-size:0.9rem; font-weight:600; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            📥 Download
-                        </button>
+                const footer = document.createElement('div');
+                footer.innerHTML = `
+                    ${mediaContent}
+                    <div class="meme-footer">
+                        <div class="meme-stats">
+                            <span>🔥 ${meme.ups} ups</span>
+                        </div>
+                        <div class="meme-actions">
+                            <button class="action-btn like-btn ${activeClass}" onclick='toggleFavorite(${JSON.stringify(meme).replace(/'/g, "&#39;")}, this)'>
+                                ${heartIcon}
+                            </button>
+                            <button class="action-btn" onclick="downloadMeme('${meme.url}', '${meme.title.replace(/'/g, "")}', ${meme.is_video})">
+                                ⬇️
+                            </button>
+                        </div>
                     </div>
                 `;
 
+                card.appendChild(footer);
                 container.appendChild(card);
             });
         }
-        // Custom Player Controls
-        function togglePlay(id) {
-            const video = document.getElementById(`${id}-video`);
-            const audio = document.getElementById(`${id}-audio`);
-            const overlay = document.getElementById(`${id}-overlay`);
+        function initHLS() {
+            if (!Hls.isSupported()) return;
 
-            if (video.paused) {
-                video.play();
-                audio.play().catch(e => console.log("Audio play failed (might be missing):", e));
-                overlay.style.opacity = '0';
-            } else {
-                video.pause();
-                audio.pause();
-                overlay.style.opacity = '1';
-            }
+            document.querySelectorAll('.hls-video').forEach(video => {
+                if (video.dataset.hlsInitialized) return;
 
-            // Sync check
-            if (Math.abs(video.currentTime - audio.currentTime) > 0.5) {
-                audio.currentTime = video.currentTime;
-            }
-        }
+                const hlsUrl = video.dataset.hlsUrl;
+                const hls = new Hls();
+                hls.loadSource(hlsUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    // Ready to play
+                });
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log("fatal network error encountered, try to recover");
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log("fatal media error encountered, try to recover");
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
 
-        function toggleMute(e, id) {
-            e.stopPropagation();
-            const video = document.getElementById(`${id}-video`);
-            const audio = document.getElementById(`${id}-audio`);
-            const icon = document.getElementById(`${id}-mute-icon`);
-
-            if (audio.muted || audio.volume === 0) {
-                audio.muted = false;
-                audio.volume = 1;
-                icon.innerHTML = '🔊';
-            } else {
-                audio.muted = true;
-                icon.innerHTML = '🔇';
-            }
+                video.dataset.hlsInitialized = "true";
+            });
         }
     </script>
 </body>
