@@ -20,9 +20,17 @@ app = Flask(__name__, static_url_path='', static_folder='.')
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
-# Database Configuration - Use MySQL on PythonAnywhere, SQLite locally
-if os.environ.get('PYTHONANYWHERE_DOMAIN'):
-    # Production: MySQL on PythonAnywhere
+# Database Configuration - Support multiple platforms
+if os.environ.get('DATABASE_URL'):
+    # Heroku: PostgreSQL
+    database_url = os.environ.get('DATABASE_URL')
+    # Heroku uses 'postgres://' but SQLAlchemy needs 'postgresql://'
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    print("Using Heroku PostgreSQL database")
+elif os.environ.get('PYTHONANYWHERE_DOMAIN'):
+    # PythonAnywhere: MySQL
     from urllib.parse import quote_plus
     MYSQL_USER = os.environ.get('MYSQL_USER', 'ankitsharma6652')
     MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
@@ -31,7 +39,7 @@ if os.environ.get('PYTHONANYWHERE_DOMAIN'):
     
     encoded_password = quote_plus(MYSQL_PASSWORD)
     app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{MYSQL_USER}:{encoded_password}@{MYSQL_HOST}/{MYSQL_DB}'
-    print(f"Using MySQL database: {MYSQL_DB}")
+    print(f"Using PythonAnywhere MySQL database: {MYSQL_DB}")
 else:
     # Local: SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mememaster.db'
