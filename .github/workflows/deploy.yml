@@ -1,0 +1,45 @@
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to PythonAnywhere
+        env:
+          PA_USERNAME: ${{ secrets.PA_USERNAME }}
+          PA_API_TOKEN: ${{ secrets.PA_API_TOKEN }}
+          PA_DOMAIN: ${{ secrets.PA_DOMAIN }}
+        run: |
+          # 1. Pull latest code
+          echo "🚀 Pulling latest code..."
+          curl -X POST https://www.pythonanywhere.com/api/v0/user/$PA_USERNAME/consoles/ \
+            -H "Authorization: Token $PA_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"executable": "bash", "working_directory": "/home/'$PA_USERNAME'/meme-quiz-apps"}' \
+            > console.json
+          
+          CONSOLE_ID=$(jq -r '.id' console.json)
+          
+          # Send git pull command
+          curl -X POST https://www.pythonanywhere.com/api/v0/user/$PA_USERNAME/consoles/$CONSOLE_ID/send_input/ \
+            -H "Authorization: Token $PA_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"input": "git pull\n"}'
+            
+          # Wait a bit for pull to finish (hacky but works for free tier)
+          sleep 10
+          
+          # 2. Reload Web App
+          echo "🔄 Reloading Web App..."
+          curl -X POST https://www.pythonanywhere.com/api/v0/user/$PA_USERNAME/webapps/$PA_DOMAIN/reload/ \
+            -H "Authorization: Token $PA_API_TOKEN"
+            
+          echo "✅ Deployment triggered!"
