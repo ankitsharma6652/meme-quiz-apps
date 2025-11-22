@@ -580,12 +580,29 @@
                 const res = await fetch('/api/favorites', {
                     credentials: 'include'
                 });
+
+                if (!res.ok) {
+                    console.error('Failed to fetch favorites:', res.status);
+                    return;
+                }
+
                 const data = await res.json();
-                userFavorites = new Set(data.map(f => f.meme_id));
-                console.log('Fetched favorites:', userFavorites);
-                // Re-render to update heart icons
-                if (allMemes.length > 0) renderMemes();
-            } catch (e) { console.error('Error fetching favorites:', e); }
+                console.log('Favorites response:', data);
+
+                // Check if data is an array
+                if (Array.isArray(data)) {
+                    userFavorites = new Set(data.map(f => f.meme_id));
+                    console.log('Fetched favorites:', userFavorites);
+                    // Re-render to update heart icons
+                    if (allMemes.length > 0) renderMemes();
+                } else {
+                    console.error('Favorites data is not an array:', data);
+                    userFavorites = new Set();
+                }
+            } catch (e) {
+                console.error('Error fetching favorites:', e);
+                userFavorites = new Set();
+            }
         }
 
         async function toggleFavorite(meme, btn) {
