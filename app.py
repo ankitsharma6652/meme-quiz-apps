@@ -370,22 +370,35 @@ def fetch_reddit_memes():
                     'source': 'Reddit'
                 }
 
+                # Handle Reddit videos (they have separate audio/video streams)
                 if meme['is_video'] and p_data.get('secure_media'):
                     video_data = p_data.get('secure_media', {}).get('reddit_video', {})
-                    fallback_url = video_data.get('fallback_url')
-                    if fallback_url:
+                    hls_url = video_data.get('hls_url')  # HLS stream with audio
+                    fallback_url = video_data.get('fallback_url')  # Video only, no audio
+                    
+                    # Prefer HLS URL as it includes audio
+                    if hls_url:
+                        # Convert HLS to direct MP4 URL (Reddit pattern)
+                        meme['video_url'] = html.unescape(hls_url.replace('/HLSPlaylist.m3u8', '/DASH_720.mp4'))
+                        meme['url'] = meme['video_url']
+                    elif fallback_url:
+                        # Fallback to video-only stream
                         meme['video_url'] = html.unescape(fallback_url)
                         meme['url'] = meme['video_url']
                     else:
+                        # Skip if no video URL available
                         meme['is_video'] = False
                 
+                # Handle .gifv and .mp4 links
                 if not meme['is_video'] and meme['url'].endswith(('.mp4', '.gifv')):
                      meme['is_video'] = True
                      meme['video_url'] = meme['url'].replace('.gifv', '.mp4')
 
+                # Skip videos without proper URLs
                 if meme['is_video'] and not meme.get('video_url'):
                     continue
 
+                # Validate image URLs
                 valid_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4')
                 if not meme['is_video'] and not meme['url'].endswith(valid_extensions):
                     continue
