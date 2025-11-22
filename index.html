@@ -138,9 +138,9 @@
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--accent-color);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--accent-color);
         }
 
         .btn-accent {
@@ -664,7 +664,7 @@
                                         <input type="text" id="ai-prompt" placeholder="e.g. Cyberpunk cat eating pizza"
                                             style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px;">
                                         <button onclick="generateAIImage()"
-                                            style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
+                                            style="background:linear-gradient(135deg, #00d2ff, #38ef7d); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
                                             Generate
                                         </button>
                                     </div>
@@ -2160,16 +2160,16 @@
             if (themeSelect) themeSelect.value = theme;
         }
 
-        // Load saved theme immediately
+        // Load saved theme immediately (DEFAULT: LIGHT)
         (function () {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
             // We can't set the select value here because DOM might not be ready, 
             // but we'll do it in DOMContentLoaded as well.
         })();
 
         document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const savedTheme = localStorage.getItem('theme') || 'light';
             const themeSelect = document.getElementById('theme-selector');
             if (themeSelect) themeSelect.value = savedTheme;
         });
