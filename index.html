@@ -1837,7 +1837,10 @@
         let isDeepFried = false;
         let selectedObjectIndex = -1;
         let isDraggingObject = false;
-        let dragStartX, dragStartY; // To store initial mouse position for dragging
+        let isResizing = false;
+        let resizeHandle = null; // 'tl', 'tr', 'bl', 'br'
+        let dragStartX, dragStartY;
+        let initialWidth, initialHeight;
 
         function toggleDeepFry() {
             isDeepFried = !isDeepFried;
@@ -1926,6 +1929,52 @@
             return -1;
         }
 
+        function getResizeHandle(x, y, obj) {
+            if (!obj) return null;
+
+            let width, height;
+            // Temporarily set ctx font to measure text correctly
+            const originalFont = ctx.font;
+            const originalTextAlign = ctx.textAlign;
+            const originalTextBaseline = ctx.textBaseline;
+
+            if (obj.type === 'text') {
+                const fontSize = Math.floor(memeCanvas.width * (obj.size / 400));
+                ctx.font = `bold ${fontSize}px Impact, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const metrics = ctx.measureText(obj.content);
+                width = metrics.width;
+                height = fontSize;
+            } else if (obj.type === 'image') {
+                width = obj.width;
+                height = obj.height;
+            }
+
+            // Restore original ctx settings
+            ctx.font = originalFont;
+            ctx.textAlign = originalTextAlign;
+            ctx.textBaseline = originalTextBaseline;
+
+            const handleSize = 15; // Increased handle size for easier touch/click
+            const padding = 5; // Padding around the object for selection box
+
+            const handles = {
+                'tl': { x: obj.x - width / 2 - padding, y: obj.y - height / 2 - padding },
+                'tr': { x: obj.x + width / 2 + padding, y: obj.y - height / 2 - padding },
+                'bl': { x: obj.x - width / 2 - padding, y: obj.y + height / 2 + padding },
+                'br': { x: obj.x + width / 2 + padding, y: obj.y + height / 2 + padding }
+            };
+
+            for (let [name, pos] of Object.entries(handles)) {
+                if (x >= pos.x - handleSize / 2 && x <= pos.x + handleSize / 2 &&
+                    y >= pos.y - handleSize / 2 && y <= pos.y + handleSize / 2) {
+                    return name;
+                }
+            }
+            return null;
+        }
+
         function handleCanvasInteractionStart(e) {
             if (isDrawMode) {
                 startDrawing(e);
@@ -1935,6 +1984,25 @@
             const rect = memeCanvas.getBoundingClientRect();
             const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
             const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
+
+            // Check if clicking on resize handle first
+            if (selectedObjectIndex !== -1) {
+                const handle = getResizeHandle(x, y, canvasObjects[selectedObjectIndex]);
+                if (handle) {
+                    isResizing = true;
+                    resizeHandle = handle;
+                    dragStartX = x;
+                    dragStartY = y;
+                    const obj = canvasObjects[selectedObjectIndex];
+                    if (obj.type === 'image') {
+                        initialWidth = obj.width;
+                        initialHeight = obj.height;
+                    } else if (obj.type === 'text') {
+                        initialWidth = obj.size; // For text, 'width' refers to font size
+                    }
+                    return;
+                }
+            }
 
             selectedObjectIndex = getHitObjectIndex(x, y);
             if (selectedObjectIndex !== -1) {
@@ -1957,7 +2025,7 @@
                     selectedObjectIndex = canvasObjects.length - 1;
                 }
             }
-            drawMeme(); // Redraw to show selection or new text
+            drawMeme();
         }
 
         function handleCanvasInteractionMove(e) {
@@ -1966,21 +2034,55 @@
                 return;
             }
 
-            if (isDraggingObject && selectedObjectIndex !== -1) {
-                const rect = memeCanvas.getBoundingClientRect();
-                const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
-                const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
+            const rect = memeCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
 
+            if (isResizing && selectedObjectIndex !== -1) {
+                const obj = canvasObjects[selectedObjectIndex];
+                const dx = x - dragStartX;
+                const dy = y - dragStartY;
+
+                // Calculate scale factor based on movement from the handle's perspective
+                let scaleFactor = 1;
+                if (resizeHandle.includes('r')) { // Right handles
+                    scaleFactor = (initialWidth + dx) / initialWidth;
+                } else if (resizeHandle.includes('l')) { // Left handles
+                    scaleFactor = (initialWidth - dx) / initialWidth;
+                }
+
+                if (resizeHandle.includes('b')) { // Bottom handles
+                    const yScaleFactor = (initialHeight + dy) / initialHeight;
+                    scaleFactor = (scaleFactor + yScaleFactor) / 2; // Average for diagonal
+                } else if (resizeHandle.includes('t')) { // Top handles
+                    const yScaleFactor = (initialHeight - dy) / initialHeight;
+                    scaleFactor = (scaleFactor + yScaleFactor) / 2; // Average for diagonal
+                }
+
+                scaleFactor = Math.max(0.1, scaleFactor); // Prevent shrinking to zero
+
+                if (obj.type === 'image') {
+                    obj.width = initialWidth * scaleFactor;
+                    obj.height = initialHeight * scaleFactor;
+                } else if (obj.type === 'text') {
+                    obj.size = Math.max(20, Math.min(200, initialWidth * scaleFactor));
+                }
+                drawMeme();
+            } else if (isDraggingObject && selectedObjectIndex !== -1) {
                 canvasObjects[selectedObjectIndex].x = x - dragStartX;
                 canvasObjects[selectedObjectIndex].y = y - dragStartY;
                 drawMeme();
             } else {
-                // Change cursor if hovering over an object
-                const rect = memeCanvas.getBoundingClientRect();
-                const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
-                const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
-                if (getHitObjectIndex(x, y) !== -1) {
-                    memeCanvas.style.cursor = 'grab';
+                // Change cursor if hovering over an object or handle
+                const hitIndex = getHitObjectIndex(x, y);
+                if (hitIndex !== -1) {
+                    const handle = getResizeHandle(x, y, canvasObjects[hitIndex]);
+                    if (handle) {
+                        if (handle === 'tl' || handle === 'br') memeCanvas.style.cursor = 'nwse-resize';
+                        else if (handle === 'tr' || handle === 'bl') memeCanvas.style.cursor = 'nesw-resize';
+                    } else {
+                        memeCanvas.style.cursor = 'grab';
+                    }
                 } else {
                     memeCanvas.style.cursor = 'default';
                 }
@@ -1993,6 +2095,8 @@
                 return;
             }
             isDraggingObject = false;
+            isResizing = false;
+            resizeHandle = null;
             memeCanvas.style.cursor = 'default';
         }
 
@@ -2024,28 +2128,44 @@
         }, { passive: false });
 
         // Touch support
-        memeCanvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = memeCanvas.getBoundingClientRect();
-            const x = (touch.clientX - rect.left) * (memeCanvas.width / rect.width);
-            const y = (touch.clientY - rect.top) * (memeCanvas.height / rect.height);
+        let touchStartDist = 0;
+        let touchStartSize = 0;
 
+        memeCanvas.addEventListener('touchstart', (e) => {
             if (isDrawMode) {
+                e.preventDefault();
+                const rect = memeCanvas.getBoundingClientRect();
+                const x = (e.touches[0].clientX - rect.left) * (memeCanvas.width / rect.width);
+                const y = (e.touches[0].clientY - rect.top) * (memeCanvas.height / rect.height);
                 startDrawing({ offsetX: x, offsetY: y });
             } else {
-                // Simulate mousedown for object interaction
-                handleCanvasInteractionStart({ clientX: touch.clientX, clientY: touch.clientY });
+                // Check for pinch gesture (2 fingers)
+                if (e.touches.length === 2 && selectedObjectIndex !== -1) {
+                    e.preventDefault();
+                    const touch1 = e.touches[0];
+                    const touch2 = e.touches[1];
+                    touchStartDist = Math.hypot(
+                        touch2.clientX - touch1.clientX,
+                        touch2.clientY - touch1.clientY
+                    );
+                    const obj = canvasObjects[selectedObjectIndex];
+                    touchStartSize = obj.type === 'image' ? obj.width : obj.size;
+                } else if (e.touches.length === 1) {
+                    // Single touch - simulate mousedown
+                    handleCanvasInteractionStart({
+                        clientX: e.touches[0].clientX,
+                        clientY: e.touches[0].clientY
+                    });
+                }
             }
         });
-        memeCanvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = memeCanvas.getBoundingClientRect();
-            const x = (touch.clientX - rect.left) * (memeCanvas.width / rect.width);
-            const y = (touch.clientY - rect.top) * (memeCanvas.height / rect.height);
 
+        memeCanvas.addEventListener('touchmove', (e) => {
             if (isDrawMode) {
+                e.preventDefault();
+                const rect = memeCanvas.getBoundingClientRect();
+                const x = (e.touches[0].clientX - rect.left) * (memeCanvas.width / rect.width);
+                const y = (e.touches[0].clientY - rect.top) * (memeCanvas.height / rect.height);
                 draw({ offsetX: x, offsetY: y });
             } else {
                 // Simulate mousemove for object interaction
