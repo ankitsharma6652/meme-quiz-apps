@@ -54,7 +54,8 @@ if __name__ == "__main__":
         ('index.html', 'index.html'),
         ('requirements.txt', 'requirements.txt'),
         ('verify_deployment.py', 'verify_deployment.py'),
-        ('diagnose_reddit.py', 'diagnose_reddit.py')
+        ('diagnose_reddit.py', 'diagnose_reddit.py'),
+        ('test_bypass.py', 'test_bypass.py')
     ]
     
     for local, remote in files_to_sync:
