@@ -389,15 +389,7 @@
 
         function setupEventListeners() {
             // Auth Actions
-            const logoutBtn = document.getElementById('logout-btn');
             const favoritesBtn = document.getElementById('my-favorites-btn');
-
-            if (logoutBtn) {
-                logoutBtn.onclick = logout;
-                console.log('Logout button event listener attached');
-            } else {
-                console.error('Logout button not found!');
-            }
 
             if (favoritesBtn) {
                 favoritesBtn.onclick = loadFavorites;
