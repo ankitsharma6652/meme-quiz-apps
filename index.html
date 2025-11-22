@@ -388,8 +388,19 @@
 
         function setupEventListeners() {
             // Auth Actions
-            document.getElementById('logout-btn').onclick = logout;
-            document.getElementById('my-favorites-btn').onclick = loadFavorites;
+            const logoutBtn = document.getElementById('logout-btn');
+            const favoritesBtn = document.getElementById('my-favorites-btn');
+
+            if (logoutBtn) {
+                logoutBtn.onclick = logout;
+                console.log('Logout button event listener attached');
+            } else {
+                console.error('Logout button not found!');
+            }
+
+            if (favoritesBtn) {
+                favoritesBtn.onclick = loadFavorites;
+            }
 
             // Feed Actions
             document.getElementById('load-btn').onclick = () => {
@@ -458,15 +469,18 @@
         }
 
         async function logout() {
+            console.log('Logout function called');
             try {
                 await fetch('/api/logout', {
                     method: 'POST',
                     credentials: 'include'
                 });
+                console.log('Logout API call successful');
             } catch (e) {
                 console.error('Logout error:', e);
             }
             // Force reload to clear everything
+            console.log('Redirecting to homepage...');
             window.location.href = '/';
         }
 
