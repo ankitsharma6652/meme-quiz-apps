@@ -801,8 +801,8 @@
                 const heartIcon = isFav ? '❤️' : '🤍';
                 const activeClass = isFav ? 'active' : '';
 
-                // Reddit Embed Player (Most Reliable)
-                const embedUrl = `${meme.permalink}?embed=true&theme=dark`;
+                // Reddit Embed Player (Using mediaembed endpoint)
+                const embedUrl = `https://www.reddit.com/mediaembed/${meme.id}`;
 
                 const mediaContent = meme.is_video ? `
                     <div style="position:relative; width:100%; padding-bottom:100%; height:0; overflow:hidden; border-radius:8px; background:#000;">
