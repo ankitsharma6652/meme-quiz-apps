@@ -467,13 +467,18 @@
         function restoreAppState() {
             try {
                 const savedState = localStorage.getItem('mememaster_state');
-                if (!savedState) return;
+                if (!savedState) {
+                    console.log('No saved state found');
+                    return;
+                }
 
                 const state = JSON.parse(savedState);
+                console.log('Restoring state:', state);
 
-                // Only restore if saved within last 30 minutes
-                const thirtyMinutes = 30 * 60 * 1000;
-                if (Date.now() - state.timestamp > thirtyMinutes) {
+                // Only restore if saved within last 2 hours (increased from 30 min)
+                const twoHours = 2 * 60 * 60 * 1000;
+                if (Date.now() - state.timestamp > twoHours) {
+                    console.log('State expired, clearing...');
                     localStorage.removeItem('mememaster_state');
                     return;
                 }
@@ -481,24 +486,39 @@
                 // Restore filters
                 if (state.filters) {
                     currentFilters = state.filters;
-                    document.getElementById('media-filter').value = currentFilters.mediaType;
-                    document.getElementById('sort-filter').value = currentFilters.sortBy;
+                    const mediaFilter = document.getElementById('media-filter');
+                    const sortFilter = document.getElementById('sort-filter');
+                    if (mediaFilter) mediaFilter.value = currentFilters.mediaType;
+                    if (sortFilter) sortFilter.value = currentFilters.sortBy;
+                    console.log('Filters restored:', currentFilters);
                 }
 
                 // Auto-load feed if it was previously loaded
                 if (state.hasLoadedFeed) {
-                    document.getElementById('load-btn').style.display = 'none';
+                    console.log('Auto-loading previous feed...');
+                    const loadBtn = document.getElementById('load-btn');
+                    if (loadBtn) loadBtn.style.display = 'none';
+
                     loadMemes().then(() => {
+                        console.log('Feed loaded, restoring scroll position...');
                         // Restore scroll position after content loads
-                        if (state.scrollPosition) {
+                        if (state.scrollPosition && state.scrollPosition > 0) {
                             setTimeout(() => {
-                                window.scrollTo(0, state.scrollPosition);
-                            }, 500);
+                                window.scrollTo({
+                                    top: state.scrollPosition,
+                                    behavior: 'smooth'
+                                });
+                                console.log('Scroll restored to:', state.scrollPosition);
+                            }, 1000); // Increased delay for content to fully load
                         }
+                    }).catch(err => {
+                        console.error('Error loading memes:', err);
                     });
                 }
             } catch (e) {
                 console.error('Error restoring state:', e);
+                // Clear corrupted state
+                localStorage.removeItem('mememaster_state');
             }
         }
 
