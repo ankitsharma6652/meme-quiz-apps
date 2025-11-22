@@ -6,17 +6,28 @@ from dotenv import load_dotenv
 import requests
 import os
 import html
+import secrets
 from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Allow OAuth over HTTP for localhost
+os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 app = Flask(__name__, static_url_path='', static_folder='.')
 
+# Configuration
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mememaster.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Session Configuration (Fix for Localhost)
+app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400 # 1 day
 
 # Google OAuth Configuration
 # You MUST get these from Google Cloud Console: https://console.cloud.google.com/
@@ -41,6 +52,7 @@ google = oauth.register(
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
     client_kwargs={'scope': 'openid email profile'},
+    jwks_uri='https://www.googleapis.com/oauth2/v3/certs' # Add JWKS URI for better validation
 )
 
 # Database Models
@@ -83,11 +95,18 @@ def serve_static(path):
 # Auth Routes
 @app.route('/login/google')
 def login_google():
+    print("Initiating Google Login...")
     redirect_uri = url_for('authorize_google', _external=True)
+    print(f"Redirect URI: {redirect_uri}")
     return google.authorize_redirect(redirect_uri)
+
+# Simple in-memory token store (for demo purposes)
+# In production, use Redis or Database
+USER_TOKENS = {}
 
 @app.route('/authorize/google')
 def authorize_google():
+    print("Callback received from Google!")
     try:
         token = google.authorize_access_token()
         resp = google.get('userinfo')
@@ -97,7 +116,6 @@ def authorize_google():
         user = User.query.filter_by(email=user_info['email']).first()
         
         if not user:
-            # Create new user
             user = User(
                 email=user_info['email'],
                 name=user_info['name'],
@@ -106,43 +124,68 @@ def authorize_google():
             db.session.add(user)
             db.session.commit()
         else:
-            # Update existing user info
             user.name = user_info['name']
             user.picture = user_info['picture']
             db.session.commit()
             
-        login_user(user)
-        return redirect('/')
+        # Generate Token
+        auth_token = secrets.token_hex(16)
+        USER_TOKENS[auth_token] = user.id
+        
+        print(f"Generated Token for {user.email}: {auth_token}")
+        
+        # Redirect with token
+        return redirect(f'/?token={auth_token}')
         
     except Exception as e:
-        print(f"OAuth Error: {e}")
-        return redirect('/')
+        error_msg = str(e).replace('\n', ' ').replace('\r', '')
+        print(f"OAuth Error: {error_msg}")
+        return redirect(f'/?error={error_msg}')
+
+def get_user_from_token():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return None
+    
+    token = auth_header.replace('Bearer ', '')
+    user_id = USER_TOKENS.get(token)
+    
+    if user_id:
+        return User.query.get(user_id)
+    return None
 
 @app.route('/api/logout', methods=['POST'])
-@login_required
 def logout():
-    logout_user()
+    # Client should delete token
     return jsonify({'message': 'Logged out successfully'})
 
 @app.route('/api/current-user', methods=['GET'])
 def get_current_user():
-    if current_user.is_authenticated:
+    user = get_user_from_token()
+    
+    if user:
+        print(f"Token valid for user: {user.email}")
         return jsonify({
             'authenticated': True,
             'user': {
-                'id': current_user.id,
-                'name': current_user.name,
-                'email': current_user.email,
-                'picture': current_user.picture
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'picture': user.picture
             }
         })
+    
+    print("No valid token found")
     return jsonify({'authenticated': False})
 
 # Favorites Routes
 @app.route('/api/favorites', methods=['GET'])
-@login_required
 def get_favorites():
-    favorites = Favorite.query.filter_by(user_id=current_user.id).order_by(Favorite.saved_at.desc()).all()
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    favorites = Favorite.query.filter_by(user_id=user.id).order_by(Favorite.saved_at.desc()).all()
     return jsonify([{
         'id': fav.id,
         'meme_id': fav.meme_id,
@@ -154,12 +197,15 @@ def get_favorites():
     } for fav in favorites])
 
 @app.route('/api/favorites', methods=['POST'])
-@login_required
 def add_favorite():
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
     data = request.json
     
     existing = Favorite.query.filter_by(
-        user_id=current_user.id,
+        user_id=user.id,
         meme_id=data.get('meme_id')
     ).first()
     
@@ -167,7 +213,7 @@ def add_favorite():
         return jsonify({'message': 'Already in favorites'}), 200
     
     favorite = Favorite(
-        user_id=current_user.id,
+        user_id=user.id,
         meme_id=data.get('meme_id'),
         meme_title=data.get('title'),
         meme_url=data.get('url'),
@@ -181,9 +227,12 @@ def add_favorite():
     return jsonify({'message': 'Added to favorites', 'id': favorite.id}), 201
 
 @app.route('/api/favorites/<int:fav_id>', methods=['DELETE'])
-@login_required
 def remove_favorite(fav_id):
-    favorite = Favorite.query.filter_by(id=fav_id, user_id=current_user.id).first()
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    favorite = Favorite.query.filter_by(id=fav_id, user_id=user.id).first()
     
     if not favorite:
         return jsonify({'error': 'Favorite not found'}), 404

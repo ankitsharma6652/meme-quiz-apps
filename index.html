@@ -278,6 +278,9 @@
 </head>
 
 <body>
+    <div id="debug-status"
+        style="background:#333; color:#fff; padding:5px; font-size:12px; text-align:center; display:none;">Checking
+        login status...</div>
     <div class="background-glow"></div>
 
     <header>
@@ -394,24 +397,79 @@
         }
 
         async function checkAuth() {
+            const status = document.getElementById('debug-status');
+            status.style.display = 'block';
+            status.innerHTML = "Checking login status...";
+
+            // Check for token in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromUrl = urlParams.get('token');
+            const errorFromUrl = urlParams.get('error');
+
+            if (errorFromUrl) {
+                status.innerHTML = `❌ Login Error: ${errorFromUrl}`;
+                status.style.background = 'red';
+                return;
+            }
+
+            if (tokenFromUrl) {
+                localStorage.setItem('authToken', tokenFromUrl);
+                // Clean URL
+                window.history.replaceState({}, document.title, "/");
+                status.innerHTML = "Token received! Verifying...";
+            }
+
+            const token = localStorage.getItem('authToken');
+
+            if (!token) {
+                status.innerHTML = "Not logged in (No token)";
+                status.style.background = '#555';
+                return;
+            }
+
             try {
-                const res = await fetch('/api/current-user');
+                const res = await fetch('/api/current-user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 const data = await res.json();
+                console.log("Auth Check Result:", data);
+
                 if (data.authenticated) {
                     currentUser = data.user;
                     updateAuthUI();
                     fetchFavorites();
+                    status.style.background = 'green';
+                    status.innerHTML = `✅ <b>LOGGED IN:</b> ${currentUser.email}`;
+                } else {
+                    // Token invalid
+                    localStorage.removeItem('authToken');
+                    status.innerHTML = "Session expired";
+                    status.style.background = '#555';
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                status.textContent = "Error: " + e.message;
+                status.style.background = 'red';
+            }
         }
 
         function updateAuthUI() {
+            console.log("Updating UI for user:", currentUser);
             if (currentUser) {
                 document.getElementById('user-logged-out').style.display = 'none';
-                document.getElementById('user-logged-in').style.display = 'flex';
-                document.getElementById('username-display').textContent = `Hi, ${currentUser.name}`;
+                const loggedInDiv = document.getElementById('user-logged-in');
+                loggedInDiv.style.display = 'flex';
+
+                const nameDisplay = document.getElementById('username-display');
+                nameDisplay.textContent = `Hi, ${currentUser.name}`;
+                nameDisplay.style.display = 'block'; // Force display
+
                 if (currentUser.picture) {
-                    document.getElementById('user-avatar').src = currentUser.picture;
+                    const avatar = document.getElementById('user-avatar');
+                    avatar.src = currentUser.picture;
+                    avatar.style.display = 'block';
                 }
             } else {
                 document.getElementById('user-logged-out').style.display = 'flex';
@@ -420,7 +478,7 @@
         }
 
         async function logout() {
-            await fetch('/api/logout', { method: 'POST' });
+            localStorage.removeItem('authToken');
             currentUser = null;
             userFavorites.clear();
             updateAuthUI();
@@ -429,8 +487,11 @@
 
         async function fetchFavorites() {
             if (!currentUser) return;
+            const token = localStorage.getItem('authToken');
             try {
-                const res = await fetch('/api/favorites');
+                const res = await fetch('/api/favorites', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const data = await res.json();
                 userFavorites = new Set(data.map(f => f.meme_id));
                 // Re-render to update heart icons
@@ -440,10 +501,11 @@
 
         async function toggleFavorite(meme, btn) {
             if (!currentUser) {
-                document.getElementById('login-modal').style.display = 'flex';
+                alert("Please sign in with Google to save favorites!");
                 return;
             }
 
+            const token = localStorage.getItem('authToken');
             const isFav = userFavorites.has(meme.id);
 
             if (isFav) {
@@ -455,7 +517,10 @@
                 try {
                     const res = await fetch('/api/favorites', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
                         body: JSON.stringify({
                             meme_id: meme.id,
                             title: meme.title,
@@ -481,8 +546,12 @@
             document.getElementById('filter-section').style.display = 'none';
             document.getElementById('load-btn').style.display = 'none';
 
+            const token = localStorage.getItem('authToken');
+
             try {
-                const res = await fetch('/api/favorites');
+                const res = await fetch('/api/favorites', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 allMemes = await res.json();
 
                 // Convert favorite format to meme format if needed

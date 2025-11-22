@@ -1,36 +1,26 @@
 # MemeMaster - Deployment Guide
 
 ## ✅ Features Implemented:
-1. **User Authentication** (Register/Login/Logout)
+1. **Google User Authentication** (Sign in with Google)
 2. **SQLite Database** for user data and favorites
 3. **Favorites System** - Save your favorite memes
-4. **Secure password hashing** with bcrypt
+4. **Token-based Authentication** for secure API access
 
 ## 🚀 Deploy to Render.com (FREE):
 
-### Step 1: Prepare for Deployment
+### Step 1: Push to GitHub
 ```bash
-# Create a Procfile
-echo "web: gunicorn app:app" > Procfile
-
-# Create runtime.txt (optional)
-echo "python-3.9.18" > runtime.txt
-```
-
-### Step 2: Push to GitHub
-```bash
-git init
 git add .
-git commit -m "Initial commit - MemeMaster app"
+git commit -m "Ready for deployment"
 # Create a new repository on GitHub, then:
 git remote add origin https://github.com/YOUR_USERNAME/mememaster.git
 git push -u origin main
 ```
 
-### Step 3: Deploy on Render
-1. Go to https://render.com
+### Step 2: Deploy on Render
+1. Go to [Render.com](https://render.com)
 2. Sign up/Login (free account)
-3. Click "New +" → "Web Service"
+3. Click **"New +"** → **"Web Service"**
 4. Connect your GitHub repository
 5. Configure:
    - **Name**: mememaster
@@ -38,103 +28,40 @@ git push -u origin main
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `gunicorn app:app`
    - **Plan**: Free
-6. Add Environment Variable:
-   - Key: `SECRET_KEY`
-   - Value: (generate a random string)
-7. Click "Create Web Service"
+6. **CRITICAL**: Add Environment Variables (Scroll down to "Environment Variables"):
+   - `SECRET_KEY`: (generate a random string)
+   - `GOOGLE_CLIENT_ID`: (paste from your .env file)
+   - `GOOGLE_CLIENT_SECRET`: (paste from your .env file)
+   - `AUTHLIB_INSECURE_TRANSPORT`: `1` (Optional, but good for testing)
+7. Click **"Create Web Service"**
 
-Your app will be live at: `https://mememaster.onrender.com`
+### ⚠️ Important Note on Database:
+On Render's Free Tier, the **SQLite database will be reset** every time you deploy or if the server restarts (which happens automatically after inactivity).
+- **For Hobby/Testing**: This is fine.
+- **For Permanent Data**: You would need to upgrade to a paid plan or connect a free external database like **Neon (Postgres)** or **Supabase**.
 
-## 🔐 Database Access:
+## 🌐 Other Free Options:
 
-The SQLite database file `mememaster.db` will be created automatically.
+1. **PythonAnywhere**:
+   - **Pros**: Persistent SQLite database (data won't be lost).
+   - **Cons**: Older interface, manual file upload or git pull.
+   - **URL**: [pythonanywhere.com](https://www.pythonanywhere.com/)
 
-### Admin Access:
-To access the database, you can:
-1. SSH into Render (paid plan) OR
-2. Add an admin route to view users (I can add this)
+2. **Railway.app**:
+   - **Pros**: Great UI, persistent volumes.
+   - **Cons**: Trial only (no permanent free tier).
 
-### Database Schema:
-**Users Table:**
-- id (Primary Key)
-- username (Unique)
-- email (Unique)
-- password_hash
-- created_at
-
-**Favorites Table:**
-- id (Primary Key)
-- user_id (Foreign Key → Users)
-- meme_id
-- meme_title
-- meme_url
-- is_video
-- source
-- saved_at
-
-## 📡 API Endpoints:
-
-### Authentication:
-- `POST /api/register` - Register new user
-- `POST /api/login` - Login
-- `POST /api/logout` - Logout
-- `GET /api/current-user` - Get current user info
-
-### Favorites:
-- `GET /api/favorites` - Get user's favorites
-- `POST /api/favorites` - Add to favorites
-- `DELETE /api/favorites/<id>` - Remove from favorites
-
-### Memes:
-- `GET /api/trending-memes` - Get trending memes
-
-## 🎨 Frontend Integration Needed:
-
-The backend is ready! You need to add UI for:
-1. Login/Register forms
-2. Logout button
-3. "Add to Favorites" button on each meme
-4. "My Favorites" page
-
-I can create this UI if you want!
-
-## 🔧 Local Testing:
-
-```bash
-python3 app.py
-```
-
-Visit: http://localhost:5000
-
-## 📊 View Database (Local):
-
-```bash
-sqlite3 mememaster.db
-.tables
-SELECT * FROM user;
-SELECT * FROM favorite;
-.quit
-```
-
-## 🌐 Alternative Free Hosting Options:
-
-1. **Render.com** (Recommended) - Free tier, auto-deploy from Git
-2. **Railway.app** - $5 free credit monthly
-3. **Fly.io** - Free tier available
-4. **PythonAnywhere** - Free tier with limitations
-
-## 🔐 Your Admin Credentials:
-
-After deployment, register the first account - that will be yours!
-
-Username: (you choose)
-Email: (you choose)
-Password: (you choose)
+## � Google Cloud Setup for Production:
+When you deploy, your URL will change (e.g., `https://mememaster.onrender.com`).
+You **MUST** add this new URL to your Google Cloud Console:
+1. Go to Google Cloud Console > APIs & Services > Credentials.
+2. Edit your OAuth Client.
+3. Add to **Authorized Redirect URIs**:
+   - `https://YOUR-APP-NAME.onrender.com/authorize/google`
+4. Save.
 
 ## 📝 Next Steps:
-
-1. Would you like me to create the login/register UI?
-2. Should I add an admin panel to view all users?
-3. Do you want to deploy now or test locally first?
-
-Let me know and I'll help you with the next step!
+1. Push code to GitHub.
+2. Create Render service.
+3. Update Google Console with new URL.
+4. Enjoy! 🚀
