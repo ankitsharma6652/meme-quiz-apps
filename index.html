@@ -488,6 +488,27 @@
                                 </div>
                             </div>
 
+                            <!-- Drawing Controls -->
+                            <div style="background:#2a2a2f; padding:0.5rem; border-radius:8px; margin-top:0.5rem;">
+                                <div
+                                    style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                                    <label style="font-size:0.9rem; color:#aaa; font-weight:bold;">✏️ Freehand
+                                        Draw</label>
+                                    <button id="toggle-draw-btn" onclick="toggleDrawMode()"
+                                        style="background:#444; color:white; border:none; padding:0.3rem 0.8rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">
+                                        Enable Drawing
+                                    </button>
+                                </div>
+                                <div id="draw-controls" style="display:none; gap:1rem; align-items:center;">
+                                    <input type="color" id="brush-color" value="#ff0000"
+                                        style="border:none; background:none; cursor:pointer; width:30px; height:30px;">
+                                    <input type="range" id="brush-size" min="2" max="20" value="5"
+                                        style="flex:1; cursor:pointer;">
+                                    <button onclick="clearDrawing()"
+                                        style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">Clear</button>
+                                </div>
+                            </div>
+
                             <!-- Custom Upload -->
                             <div style="border-top:1px solid #333; padding-top:1rem;">
                                 <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
@@ -1548,6 +1569,89 @@
             }
         }
 
+        // Drawing Logic
+        let isDrawing = false;
+        let isDrawMode = false;
+        let drawingLayer = document.createElement('canvas'); // Off-screen canvas for drawing
+        let drawCtx = drawingLayer.getContext('2d');
+        let lastX = 0;
+        let lastY = 0;
+
+        function toggleDrawMode() {
+            isDrawMode = !isDrawMode;
+            const btn = document.getElementById('toggle-draw-btn');
+            const controls = document.getElementById('draw-controls');
+
+            if (isDrawMode) {
+                btn.innerText = 'Disable Drawing';
+                btn.style.background = '#28a745';
+                controls.style.display = 'flex';
+                memeCanvas.style.cursor = 'crosshair';
+            } else {
+                btn.innerText = 'Enable Drawing';
+                btn.style.background = '#444';
+                controls.style.display = 'none';
+                memeCanvas.style.cursor = 'default';
+            }
+        }
+
+        function clearDrawing() {
+            drawCtx.clearRect(0, 0, drawingLayer.width, drawingLayer.height);
+            drawMeme();
+        }
+
+        // Event Listeners for Drawing
+        memeCanvas.addEventListener('mousedown', startDrawing);
+        memeCanvas.addEventListener('mousemove', draw);
+        memeCanvas.addEventListener('mouseup', stopDrawing);
+        memeCanvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support
+        memeCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = memeCanvas.getBoundingClientRect();
+            startDrawing({
+                offsetX: (touch.clientX - rect.left) * (memeCanvas.width / rect.width),
+                offsetY: (touch.clientY - rect.top) * (memeCanvas.height / rect.height)
+            });
+        });
+        memeCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = memeCanvas.getBoundingClientRect();
+            draw({
+                offsetX: (touch.clientX - rect.left) * (memeCanvas.width / rect.width),
+                offsetY: (touch.clientY - rect.top) * (memeCanvas.height / rect.height)
+            });
+        });
+        memeCanvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            if (!isDrawMode) return;
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function draw(e) {
+            if (!isDrawing || !isDrawMode) return;
+
+            drawCtx.beginPath();
+            drawCtx.moveTo(lastX, lastY);
+            drawCtx.lineTo(e.offsetX, e.offsetY);
+            drawCtx.strokeStyle = document.getElementById('brush-color').value;
+            drawCtx.lineWidth = document.getElementById('brush-size').value;
+            drawCtx.lineCap = 'round';
+            drawCtx.stroke();
+
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+            drawMeme(); // Update main canvas
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
         function drawMeme() {
             if (!currentTemplate) return;
 
@@ -1556,7 +1660,26 @@
             img.src = currentTemplate.url;
 
             img.onload = () => {
+                // Sync drawing layer size if needed
+                if (drawingLayer.width !== memeCanvas.width || drawingLayer.height !== memeCanvas.height) {
+                    // Save current drawing
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = drawingLayer.width;
+                    tempCanvas.height = drawingLayer.height;
+                    tempCanvas.getContext('2d').drawImage(drawingLayer, 0, 0);
+
+                    // Resize
+                    drawingLayer.width = memeCanvas.width;
+                    drawingLayer.height = memeCanvas.height;
+
+                    // Restore drawing (scaled)
+                    drawCtx.drawImage(tempCanvas, 0, 0, memeCanvas.width, memeCanvas.height);
+                }
+
                 ctx.drawImage(img, 0, 0, memeCanvas.width, memeCanvas.height);
+
+                // Draw the drawing layer on top of image
+                ctx.drawImage(drawingLayer, 0, 0);
 
                 const topText = document.getElementById('top-text').value.toUpperCase();
                 const bottomText = document.getElementById('bottom-text').value.toUpperCase();
@@ -1570,8 +1693,6 @@
                 ctx.textAlign = 'center';
 
                 // Calculate font size relative to canvas width but scaled by slider
-                // Base size is width/10. Slider acts as multiplier (20-100 => 0.5x to 2.5x roughly)
-                // Let's just use the slider value as a base percentage of width
                 const fontSize = Math.floor(memeCanvas.width * (fontSizeVal / 400));
                 ctx.font = `bold ${fontSize}px Impact, sans-serif`;
 
