@@ -699,83 +699,87 @@
             if (loadMoreBtn) {
                 loadMoreBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
                 loadMoreBtn.disabled = true;
+            }
+
+            try {
+                // 1. Fetch Images from Backend
+                const backendPromise = fetch('/api/memes').then(r => r.json());
+
+                // 2. Fetch Videos from RSS
+                const videoPromise = fetchRSSVideos();
+
+                const [backendMemes, videoMemes] = await Promise.all([backendPromise, videoPromise]);
+
+                // 3. Combine
+                let newMemes = [...backendMemes, ...videoMemes];
+
+                // Shuffle
+                newMemes.sort(() => Math.random() - 0.5);
+
+                if (!append) {
+                    allMemes = newMemes;
+                } else {
+                    allMemes = [...allMemes, ...newMemes];
+                }
+
+                loading.style.display = 'none';
+                filterSection.style.display = 'block';
+
+                if (closeBtn) closeBtn.style.display = 'block';
+
+                // Refresh favorites
+                if (currentUser && !append) {
+                    await fetchFavorites();
+                }
+
+                // Render (pass append flag and new items if appending)
+                renderMemes(append, newMemes);
+
+            } catch (error) {
+                console.error('Error loading memes:', error);
+
+                // Fallback
                 try {
-                    // 1. Fetch Images from Backend
-                    const backendPromise = fetch('/api/memes').then(r => r.json());
-
-                    // 2. Fetch Videos from RSS (New Strategy)
-                    const videoPromise = fetchRSSVideos();
-
-                    const [backendMemes, videoMemes] = await Promise.all([backendPromise, videoPromise]);
-
-                    // 3. Combine
-                    let newMemes = [...backendMemes, ...videoMemes];
-
-                    // Shuffle
-                    newMemes.sort(() => Math.random() - 0.5);
-
-                    if (!append) {
-                        allMemes = newMemes;
-                    } else {
-                        allMemes = [...allMemes, ...newMemes];
-                    }
-
-                    loading.style.display = 'none';
-                    filterSection.style.display = 'block';
-
-                    if (loadMoreBtn) loadMoreBtn.style.display = 'block';
-                    if (closeBtn) closeBtn.style.display = 'block';
-
-                    // Refresh favorites to ensure correct heart states
-                    if (currentUser && !append) {
-                        await fetchFavorites();
-                    }
-
-                    renderMemes();
-
-                } catch (error) {
-                    console.error('Error loading memes:', error);
-
-                    // If backend fails, at least show videos
-                    try {
-                        const videoMemes = await fetchRedditVideos();
-                        if (videoMemes.length > 0) {
+                    const videoMemes = await fetchRSSVideos(); // Fixed function name
+                    if (videoMemes.length > 0) {
+                        if (!append) {
                             allMemes = videoMemes;
-                            loading.style.display = 'none';
-                            filterSection.style.display = 'block';
-                            renderMemes();
                         } else {
-                            throw new Error('No content found');
+                            allMemes = [...allMemes, ...videoMemes];
                         }
-                    } catch (e) {
                         loading.style.display = 'none';
-                        feedContainer.innerHTML = '<p style="text-align:center; padding:3rem; color:#ff6b6b;">Failed to load memes. Please try again.</p>';
+                        filterSection.style.display = 'block';
+                        renderMemes(append, videoMemes);
+                    } else {
+                        throw new Error('No content found');
                     }
-                } finally {
-                    isLoading = false;
-                    if (loadMoreBtn) {
-                        loadMoreBtn.innerHTML = '🔄 Load More Memes';
-                        loadMoreBtn.disabled = false;
-                    }
+                } catch (e) {
+                    loading.innerHTML = `<div style="text-align:center; padding:2rem;"><h3>⚠️ Failed to load memes</h3><p>Please check your connection and try again.</p><button onclick="location.reload()" class="action-btn" style="margin-top:1rem;">Retry</button></div>`;
+                }
+            } finally {
+                if (loadMoreBtn) {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.innerHTML = 'Load More Memes';
+                    loadMoreBtn.style.display = 'block';
                 }
             }
         }
 
-        function renderMemes() {
+        function renderMemes(append = false, newItems = null) {
             const container = document.getElementById('feed-container');
-            // Don't clear container if appending, but for now we rebuild or append logic is handled in loadMemes
-            // Actually loadMemes clears it if not append.
-            // We need to be careful not to duplicate if we are just re-rendering.
-            // For simplicity, we will clear and re-render everything or just append new ones?
-            // The current logic in loadMemes clears it if !append.
-            // So here we should just render 'allMemes'. 
-            // Wait, renderMemes is called with no args and renders 'allMemes'.
-            // This is fine for small lists, but for infinite scroll it might be heavy.
-            // Let's stick to the current pattern but optimize the video player.
 
-            container.innerHTML = '';
+            if (!append) {
+                container.innerHTML = '';
+            }
 
-            let filtered = allMemes.filter(meme => {
+            // If appending, we only want to render the new items to avoid duplicating or re-rendering everything
+            // However, we must also respect filters.
+            // If we are appending, we filter the NEW items and append them.
+            // If we are not appending, we filter ALL items.
+
+            let sourceArray = append && newItems ? newItems : allMemes;
+
+            let filtered = sourceArray.filter(meme => {
                 if (currentFilters.mediaType === 'images') return !meme.is_video;
                 if (currentFilters.mediaType === 'videos') return meme.is_video;
                 return true;
@@ -787,7 +791,7 @@
                 filtered.sort(() => Math.random() - 0.5);
             }
 
-            if (filtered.length === 0) {
+            if (filtered.length === 0 && !append) {
                 container.innerHTML = `
                     <div style="text-align:center; padding:4rem 1rem; color:#666;">
                         <div style="font-size:3rem; margin-bottom:1rem;">😕</div>
