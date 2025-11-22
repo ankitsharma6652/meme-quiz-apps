@@ -609,6 +609,7 @@
 
             // List of CORS proxies to try
             const proxies = [
+                url => `https://cors.eu.org/${url}`,
                 url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
                 url => `https://thingproxy.freeboard.io/fetch/${url}`,
                 url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -656,6 +657,34 @@
             });
 
             await Promise.all(fetchPromises);
+
+            // Fallback if no videos found (Reddit blocking everything)
+            if (videos.length === 0) {
+                console.warn("All proxies failed. Loading fallback videos.");
+                videos.push(
+                    {
+                        id: 'fallback_1',
+                        title: 'When the code finally works',
+                        url: 'https://v.redd.it/fallback1',
+                        meme_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Placeholder
+                        is_video: true,
+                        source: 'System',
+                        ups: 999,
+                        author: 'MemeMaster'
+                    },
+                    {
+                        id: 'fallback_2',
+                        title: 'Me waiting for deployment',
+                        url: 'https://v.redd.it/fallback2',
+                        meme_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', // Placeholder
+                        is_video: true,
+                        source: 'System',
+                        ups: 888,
+                        author: 'MemeMaster'
+                    }
+                );
+            }
+
             return videos;
         }
 
