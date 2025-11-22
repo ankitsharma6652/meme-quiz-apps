@@ -127,6 +127,18 @@ class LoginHistory(db.Model):
     user_agent = db.Column(db.String(500))
     login_method = db.Column(db.String(50), default='google')  # 'google', 'facebook', etc.
 
+class UserMeme(db.Model):
+    __tablename__ = 'user_memes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
+    title = db.Column(db.String(500))
+    image_data = db.Column(db.Text, nullable=False)  # Base64 encoded image
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    upvotes = db.Column(db.Integer, default=0)
+    
+    user = db.relationship('User', backref='memes')
+
 @login_manager.user_loader
 def load_user(user_email):
     return User.query.get(user_email)
@@ -398,7 +410,7 @@ def get_quiz_question():
         response = requests.get(url, timeout=5)
         
         if response.status_code != 200:
-            return jsonify({'error': 'Failed to fetch question'}), 500
+            return jsonify({'error': 'Failed to fetch memes'}), 500
             
         data = response.json()
         
@@ -893,6 +905,61 @@ def fetch_imgur_memes():
         print(f"Meme API fetch error: {e}")
     
     return memes
+
+@app.route('/api/post-meme', methods=['POST'])
+@login_required
+def post_meme():
+    try:
+        data = request.get_json()
+        image_data = data.get('image_data')
+        title = data.get('title', 'Untitled Meme')
+        
+        if not image_data:
+            return jsonify({'error': 'No image data provided'}), 400
+        
+        # Create new meme
+        new_meme = UserMeme(
+            user_email=current_user.email,
+            title=title,
+            image_data=image_data
+        )
+        
+        db.session.add(new_meme)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'meme_id': new_meme.id,
+            'message': 'Meme posted successfully!'
+        })
+    except Exception as e:
+        print(f"Error posting meme: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to post meme'}), 500
+
+@app.route('/api/user-memes', methods=['GET'])
+def get_user_memes():
+    try:
+        # Get recent user-generated memes
+        memes = UserMeme.query.order_by(UserMeme.created_at.desc()).limit(50).all()
+        
+        result = []
+        for meme in memes:
+            result.append({
+                'id': f'user_{meme.id}',
+                'title': meme.title,
+                'url': meme.image_data,  # Base64 data URL
+                'author': meme.user.name if meme.user else 'Anonymous',
+                'ups': meme.upvotes,
+                'source': 'user_generated',
+                'isVideo': False,
+                'created_at': meme.created_at.isoformat()
+            })
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error fetching user memes: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user memes'}), 500
 
 if __name__ == '__main__':
     print("Starting MemeMaster Server...")

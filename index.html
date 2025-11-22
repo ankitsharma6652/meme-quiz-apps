@@ -696,14 +696,18 @@
                                     </div>
                                 </div>
 
-                                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
                                     <button onclick="downloadCreatedMeme()"
-                                        style="flex:1; background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                                        💾 Download
+                                        style="flex:1; min-width:150px; background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:1rem; border-radius:12px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 4px 15px rgba(0,210,255,0.3);">
+                                        💾 Download Meme
                                     </button>
-                                    <button onclick="shareCreatedMeme()"
-                                        style="flex:1; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                                        📤 Share
+                                    <button onclick="shareMeme()"
+                                        style="flex:1; min-width:150px; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; border-radius:12px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 4px 15px rgba(17,153,142,0.3);">
+                                        🔗 Share Meme
+                                    </button>
+                                    <button onclick="postMeme()"
+                                        style="flex:1; min-width:150px; background:linear-gradient(135deg, #ff0055, #ff6b6b); color:white; border:none; padding:1rem; border-radius:12px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 4px 15px rgba(255,0,85,0.3);">
+                                        🚀 Post to Feed
                                     </button>
                                 </div>
                             </div>
@@ -1357,7 +1361,7 @@
                                 </div>
                             </div>
 
-                            <button onclick="toggleMute(event, '${uniqueId}')" style="position:absolute; bottom:15px; right:15px; background:rgba(0,0,0,0.6); border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; color:white; font-size:1.2rem; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">
+                            <button onclick="toggleMute(event, '${uniqueId}')" style="position:absolute; bottom:15px; right:15px; background:rgba(0,0,0,0.6); border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; color:white; font-size:1.2rem; display:flex; align-items:center; justify:center; transition:background 0.2s;">
                                 <span id="${uniqueId}-mute-icon">🔇</span>
                             </button>
                         </div>
@@ -2448,21 +2452,85 @@
             link.click();
         }
 
-        async function shareCreatedMeme() {
-            memeCanvas.toBlob(async (blob) => {
-                const file = new File([blob], 'meme.png', { type: 'image/png' });
-                if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'My Meme',
-                            text: 'Check out this meme I created with MemeMaster AI! 🤖✨'
+        function shareMeme() {
+            const dataUrl = memeCanvas.toDataURL('image/png');
+
+            if (navigator.share) {
+                // Convert data URL to blob for sharing
+                fetch(dataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const file = new File([blob], 'meme.png', { type: 'image/png' });
+                        return navigator.share({
+                            title: 'Check out my meme!',
+                            text: 'Created with MemeMaster',
+                            files: [file]
                         });
-                    } catch (e) { console.error(e); }
-                } else {
-                    alert('Sharing is not supported on this browser/device. Please download the image instead.');
+                    })
+                    .catch(err => {
+                        console.log('Share failed:', err);
+                        // Fallback: copy link
+                        alert('Sharing not supported. Meme downloaded instead!');
+                        downloadCreatedMeme();
+                    });
+            } else {
+                alert('Sharing not supported on this device. Meme downloaded instead!');
+                downloadCreatedMeme();
+            }
+        }
+
+        async function postMeme() {
+            try {
+                // Check if user is logged in
+                const userInfo = document.getElementById('user-logged-in');
+                if (!userInfo || userInfo.style.display === 'none') {
+                    alert('Please sign in to post memes!');
+                    return;
                 }
-            });
+
+                // Get the canvas data as base64
+                const imageData = memeCanvas.toDataURL('image/png');
+
+                // Prompt for title
+                const title = prompt('Give your meme a title:', 'My Awesome Meme');
+                if (!title) return;
+
+                // Show loading state
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '⏳ Posting...';
+                button.disabled = true;
+
+                // Post to server
+                const response = await fetch('/api/post-meme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        image_data: imageData,
+                        title: title
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('🎉 Meme posted successfully! It will appear in the feed.');
+                    // Optionally redirect to feed
+                    // location.reload();
+                } else {
+                    alert('Failed to post meme: ' + (result.error || 'Unknown error'));
+                }
+
+                // Restore button
+                button.innerHTML = originalText;
+                button.disabled = false;
+            } catch (error) {
+                console.error('Error posting meme:', error);
+                alert('Failed to post meme. Please try again.');
+            }
         }
 
         function generateAIImage() {
