@@ -340,13 +340,17 @@ def proxy_audio():
         return jsonify({'error': str(e)}), 500
 
 def fetch_reddit_memes():
-    subreddits = ['IndiaMemes', 'IndianDankMemes', 'bakchodi', 'memes', 'dankmemes', 'funny']
+    # Prioritize Indian subreddits
+    subreddits = ['IndiaMemes', 'IndianDankMemes', 'bakchodi', 'IndianMeyMeys', 'memes', 'dankmemes']
     memes = []
     headers = {'User-Agent': 'MemeQuizApp/1.0'}
     
     try:
-        for sub in subreddits[:4]:
-            url = f'https://www.reddit.com/r/{sub}/hot.json?limit=20'
+        # Fetch more from Indian subreddits (first 4 are Indian)
+        for i, sub in enumerate(subreddits[:6]):
+            # Get more posts from Indian subreddits
+            limit = 30 if i < 4 else 15
+            url = f'https://www.reddit.com/r/{sub}/hot.json?limit={limit}'
             response = requests.get(url, headers=headers, timeout=5)
             
             if response.status_code != 200:

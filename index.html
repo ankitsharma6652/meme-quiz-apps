@@ -621,6 +621,10 @@
                 if (allMemes.length === 0) {
                     feedContainer.innerHTML = '<p style="text-align:center; padding:3rem; color:#aaa;">No memes found. Try again later!</p>';
                 } else {
+                    // Refresh favorites to ensure correct heart states
+                    if (currentUser && !append) {
+                        await fetchFavorites();
+                    }
                     renderMemes();
                 }
             } catch (error) {
