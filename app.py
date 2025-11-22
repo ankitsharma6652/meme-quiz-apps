@@ -18,12 +18,30 @@ os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
 app = Flask(__name__, static_url_path='', static_folder='.')
 
 # Configuration
-# Configuration
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mememaster.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Session Configuration (Fix for Localhost)
+# Database Configuration - Use MySQL on PythonAnywhere, SQLite locally
+if os.environ.get('PYTHONANYWHERE_DOMAIN'):
+    # Production: MySQL on PythonAnywhere
+    MYSQL_USER = os.environ.get('MYSQL_USER', 'ankitsharma6652')
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
+    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'ankitsharma6652.mysql.pythonanywhere-services.com')
+    MYSQL_DB = os.environ.get('MYSQL_DB', 'ankitsharma6652$mememaster')
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}'
+    print(f"Using MySQL database: {MYSQL_DB}")
+else:
+    # Local: SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mememaster.db'
+    print("Using SQLite database: mememaster.db")
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_recycle': 280,
+    'pool_pre_ping': True,
+}
+
+# Session Configuration
 app.config['SESSION_COOKIE_SECURE'] = True  # Require HTTPS in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
