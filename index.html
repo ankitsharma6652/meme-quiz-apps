@@ -609,9 +609,9 @@
 
             const fetchPromises = subs.map(async sub => {
                 try {
-                    // Use AllOrigins as a CORS proxy
-                    const targetUrl = encodeURIComponent(`https://www.reddit.com/r/${sub}/hot.json?limit=25`);
-                    const response = await fetch(`https://api.allorigins.win/raw?url=${targetUrl}`);
+                    // Use corsproxy.io (faster & more reliable)
+                    const targetUrl = `https://www.reddit.com/r/${sub}/hot.json?limit=25`;
+                    const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
                     if (!response.ok) return;
 
                     const data = await response.json();
