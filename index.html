@@ -497,10 +497,31 @@
                                     style="color:#aaa; font-size:0.9rem; width:100%;">
                             </div>
 
-                            <button onclick="downloadCreatedMeme()"
-                                style="background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600; margin-top:0.5rem;">
-                                💾 Download Meme
-                            </button>
+                            <!-- AI Generation -->
+                            <div style="border-top:1px solid #333; padding-top:1rem; margin-top:1rem;">
+                                <label
+                                    style="display:block; margin-bottom:0.5rem; color:#00d2ff; font-size:0.9rem; font-weight:bold;">✨
+                                    AI Image Generator (Free Unlimited)</label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" id="ai-prompt" placeholder="e.g. Cyberpunk cat eating pizza"
+                                        style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px;">
+                                    <button onclick="generateAIImage()"
+                                        style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:1rem; margin-top:1rem;">
+                                <button onclick="downloadCreatedMeme()"
+                                    style="flex:1; background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
+                                    💾 Download
+                                </button>
+                                <button onclick="shareCreatedMeme()"
+                                    style="flex:1; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
+                                    📤 Share
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1579,6 +1600,75 @@
             link.download = `meme-${Date.now()}.png`;
             link.href = memeCanvas.toDataURL();
             link.click();
+        }
+
+        async function shareCreatedMeme() {
+            memeCanvas.toBlob(async (blob) => {
+                const file = new File([blob], 'meme.png', { type: 'image/png' });
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My Meme',
+                            text: 'Check out this meme I created with MemeMaster AI! 🤖✨'
+                        });
+                    } catch (e) { console.error(e); }
+                } else {
+                    alert('Sharing is not supported on this browser/device. Please download the image instead.');
+                }
+            });
+        }
+
+        function generateAIImage() {
+            const prompt = document.getElementById('ai-prompt').value;
+            if (!prompt) return alert('Please enter a prompt for the AI!');
+
+            const btn = document.querySelector('button[onclick="generateAIImage()"]');
+            const originalText = btn.innerText;
+            btn.innerText = '⏳ Generating...';
+            btn.disabled = true;
+
+            // Use Pollinations.ai (Free, No API Key required)
+            // Add random seed to ensure new image on same prompt
+            const seed = Math.floor(Math.random() * 10000);
+            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${seed}&width=800&height=800&nologo=true`;
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                currentTemplate = {
+                    url: url,
+                    width: img.width,
+                    height: img.height,
+                    isCustom: true
+                };
+
+                // Reset grid selection
+                const grid = document.getElementById('template-grid');
+                Array.from(grid.children).forEach(c => c.querySelector('img').style.borderColor = 'transparent');
+
+                // Resize canvas to fit
+                const maxWidth = 800;
+                if (img.width > maxWidth) {
+                    const scale = maxWidth / img.width;
+                    memeCanvas.width = maxWidth;
+                    memeCanvas.height = img.height * scale;
+                } else {
+                    memeCanvas.width = img.width;
+                    memeCanvas.height = img.height;
+                }
+
+                drawMeme();
+
+                btn.innerText = originalText;
+                btn.disabled = false;
+            };
+            img.onerror = () => {
+                alert('Failed to generate image. Please try a different prompt.');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            };
+            img.src = url;
         }
     </script>
 </body>
