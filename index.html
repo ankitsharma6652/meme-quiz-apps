@@ -857,9 +857,24 @@
                     <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage unavailable%3C/text%3E%3C/svg%3E'">
                 `;
 
-                const footer = document.createElement('div');
-                footer.innerHTML = `
+                // Correctly structure the card content
+                card.innerHTML = `
+                    <div class="meme-header">
+                        <div class="meme-author">
+                            <div class="author-avatar">${meme.author ? meme.author[0].toUpperCase() : 'U'}</div>
+                            <div class="author-info">
+                                <span class="author-name">u/${meme.author}</span>
+                                <span class="meme-source">${meme.source}</span>
+                            </div>
+                        </div>
+                        <div class="meme-actions">
+                            <button class="action-btn" onclick="shareMeme('${meme.url}')">↗️</button>
+                        </div>
+                    </div>
+                    <div class="meme-title" style="font-size:1.2rem; font-weight:600; margin:0.5rem 0 1rem;">${meme.title}</div>
+                    
                     ${mediaContent}
+                    
                     <div class="meme-footer">
                         <div class="meme-stats">
                             <span>🔥 ${meme.ups} ups</span>
@@ -875,7 +890,6 @@
                     </div>
                 `;
 
-                card.appendChild(footer);
                 container.appendChild(card);
             });
         }
