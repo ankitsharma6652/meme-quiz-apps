@@ -801,31 +801,41 @@
                 const heartIcon = isFav ? '❤️' : '🤍';
                 const activeClass = isFav ? 'active' : '';
 
+                // Custom Sync Player for Reddit (Video + Audio)
+                const uniqueId = `player-${meme.id}`;
+                const videoSrc = `https://v.redd.it/${meme.id}/DASH_720.mp4`;
+                const audioSrc = `https://v.redd.it/${meme.id}/DASH_audio.mp4`;
+
                 const mediaContent = meme.is_video ? `
-                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden;">
+                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden;" class="custom-player" id="${uniqueId}">
                         <video 
-                            controls 
-                            loop 
-                            muted
+                            id="${uniqueId}-video"
                             playsinline 
-                            preload="metadata" 
-                            referrerpolicy="no-referrer"
-                            style="width:100%; max-height:600px; object-fit:contain; display:block;"
-                            onloadeddata="console.log('Video loaded successfully')"
-                            onerror="console.error('Video load error'); this.parentElement.innerHTML='<div style=\\'padding:2rem; text-align:center; color:#999;\\'>❌ Video unavailable</div>'"
+                            loop
+                            poster="${meme.url}"
+                            style="width:100%; max-height:600px; object-fit:contain; display:block; cursor:pointer;"
+                            onclick="togglePlay('${uniqueId}')"
                         >
-                            <!-- Try multiple qualities -->
-                            <source src="https://v.redd.it/${meme.id}/DASH_1080.mp4" type="video/mp4">
-                            <source src="https://v.redd.it/${meme.id}/DASH_720.mp4" type="video/mp4">
+                            <source src="${videoSrc}" type="video/mp4">
                             <source src="https://v.redd.it/${meme.id}/DASH_480.mp4" type="video/mp4">
                             <source src="https://v.redd.it/${meme.id}/DASH_360.mp4" type="video/mp4">
-                            <source src="https://v.redd.it/${meme.id}/DASH_240.mp4" type="video/mp4">
-                            <source src="${meme.video_url || meme.url || meme.meme_url}" type="video/mp4">
-                            Your browser doesn't support video playback.
                         </video>
-                        <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:5px; font-size:0.75rem; color:#fff;">
-                            🔇 Click to unmute
+                        
+                        <audio id="${uniqueId}-audio" loop style="display:none;">
+                            <source src="${audioSrc}" type="audio/mp4">
+                        </audio>
+
+                        <!-- Custom Controls Overlay -->
+                        <div id="${uniqueId}-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none; transition:opacity 0.3s;">
+                            <div style="background:rgba(0,0,0,0.6); border-radius:50%; padding:1.5rem; display:flex; align-items:center; justify-content:center;">
+                                <span style="font-size:2rem;">▶️</span>
+                            </div>
                         </div>
+
+                        <!-- Mute Toggle -->
+                        <button onclick="toggleMute(event, '${uniqueId}')" style="position:absolute; bottom:15px; right:15px; background:rgba(0,0,0,0.6); border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; color:white; font-size:1.2rem; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">
+                            <span id="${uniqueId}-mute-icon">🔇</span>
+                        </button>
                     </div>
                 ` : `
                     <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage unavailable%3C/text%3E%3C/svg%3E'">
@@ -848,6 +858,43 @@
 
                 container.appendChild(card);
             });
+        }
+        // Custom Player Controls
+        function togglePlay(id) {
+            const video = document.getElementById(`${id}-video`);
+            const audio = document.getElementById(`${id}-audio`);
+            const overlay = document.getElementById(`${id}-overlay`);
+
+            if (video.paused) {
+                video.play();
+                audio.play().catch(e => console.log("Audio play failed (might be missing):", e));
+                overlay.style.opacity = '0';
+            } else {
+                video.pause();
+                audio.pause();
+                overlay.style.opacity = '1';
+            }
+
+            // Sync check
+            if (Math.abs(video.currentTime - audio.currentTime) > 0.5) {
+                audio.currentTime = video.currentTime;
+            }
+        }
+
+        function toggleMute(e, id) {
+            e.stopPropagation();
+            const video = document.getElementById(`${id}-video`);
+            const audio = document.getElementById(`${id}-audio`);
+            const icon = document.getElementById(`${id}-mute-icon`);
+
+            if (audio.muted || audio.volume === 0) {
+                audio.muted = false;
+                audio.volume = 1;
+                icon.innerHTML = '🔊';
+            } else {
+                audio.muted = true;
+                icon.innerHTML = '🔇';
+            }
         }
     </script>
 </body>
