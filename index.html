@@ -484,6 +484,9 @@
             window.location.href = '/';
         }
 
+        // Make logout globally accessible for onclick
+        window.logout = logout;
+
         async function fetchFavorites() {
             if (!currentUser) return;
             try {
