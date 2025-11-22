@@ -582,10 +582,16 @@
                             <div id="text-controls"
                                 style="display:none; margin-top:0.5rem; background:#ff0055; padding:0.8rem; border-radius:8px; align-items:center; justify-content:space-between;">
                                 <span style="font-size:0.9rem; color:white; font-weight:600;">✓ Object Selected</span>
-                                <button onclick="deleteSelectedObject()"
-                                    style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                    🗑️ Delete (or press Delete key)
-                                </button>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <button id="edit-text-btn" onclick="editSelectedText()"
+                                        style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display:none;">
+                                        ✏️ Edit Text
+                                    </button>
+                                    <button onclick="deleteSelectedObject()"
+                                        style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                        🗑️ Delete (Del key)
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Effects & Stickers -->
@@ -828,7 +834,8 @@
                                 });
                                 console.log('Scroll restored to:', state.scrollPosition);
                             }, 1000);
-                        });
+                        }
+                    });
                 }
                 // Auto-load feed if it was previously loaded (and not viewing favorites)
                 else if (state.hasLoadedFeed) {
@@ -1907,6 +1914,20 @@
             }
         }
 
+        function editSelectedText() {
+            if (selectedObjectIndex !== -1 && canvasObjects[selectedObjectIndex].type === 'text') {
+                const obj = canvasObjects[selectedObjectIndex];
+                const newText = prompt("Edit text:", obj.content);
+                if (newText !== null && newText.trim() !== '') {
+                    obj.content = newText;
+                    drawMeme();
+                } else if (newText !== null && newText.trim() === '') {
+                    // If user clears the text, delete the object
+                    deleteSelectedObject();
+                }
+            }
+        }
+
         function getHitObjectIndex(x, y) {
             // Iterate backwards to select top-most item first
             for (let i = canvasObjects.length - 1; i >= 0; i--) {
@@ -2036,6 +2057,21 @@
             }
             drawMeme();
         }
+
+        // Double-click to edit text
+        memeCanvas.addEventListener('dblclick', (e) => {
+            if (isDrawMode) return;
+
+            const rect = memeCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
+
+            const hitIndex = getHitObjectIndex(x, y);
+            if (hitIndex !== -1 && canvasObjects[hitIndex].type === 'text') {
+                selectedObjectIndex = hitIndex;
+                editSelectedText();
+            }
+        });
 
         function handleCanvasInteractionMove(e) {
             if (isDrawMode) {
@@ -2345,12 +2381,22 @@
 
                 // Show/Hide Text Controls
                 const textControls = document.getElementById('text-controls');
+                const editTextBtn = document.getElementById('edit-text-btn');
                 if (textControls) {
                     if (selectedObjectIndex !== -1) {
                         textControls.style.display = 'flex';
+                        const obj = canvasObjects[selectedObjectIndex];
                         // Update label based on type
                         const label = textControls.querySelector('span');
-                        if (label) label.innerText = canvasObjects[selectedObjectIndex].type === 'text' ? 'Text Selected (Scroll to resize)' : 'Image Selected (Scroll to resize)';
+                        if (label) {
+                            if (obj.type === 'text') {
+                                label.innerText = 'Text Selected (Double-click or scroll to edit)';
+                                if (editTextBtn) editTextBtn.style.display = 'inline-block';
+                            } else {
+                                label.innerText = 'Image Selected (Scroll to resize)';
+                                if (editTextBtn) editTextBtn.style.display = 'none';
+                            }
+                        }
                     } else {
                         textControls.style.display = 'none';
                     }
