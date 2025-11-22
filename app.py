@@ -378,7 +378,10 @@ QUIZ_CATEGORIES = {
     'Desi Humor': ['IndianDankMemes', 'DesiMemes', 'bakchodi', 'IndianMeyMeys', 'HindiMemes'],
     'Global Viral': ['memes', 'dankmemes', 'me_irl', 'funny', 'facepalm', 'HolUp'],
     'Science & History': ['HistoryMemes', 'sciencememes', 'physicsmemes', 'SpaceMemes'],
-    'Anime': ['animememes', 'Animemes', 'goodanimemes']
+    'Anime': ['animememes', 'Animemes', 'goodanimemes'],
+    'Facts & Wonder': ['damnthatsinteresting', 'BeAmazed', 'interestingasfuck', 'educationalgifs'],
+    'Indian Culture & Temples': ['IncredibleIndia', 'TempleArchitecture', 'Hinduism', 'IndiaSpeaks'],
+    'Mythology': ['hindumemes', 'mythologymemes', 'MythologyMemes']
 }
 
 @app.route('/api/quiz/question', methods=['GET'])
@@ -506,7 +509,8 @@ def proxy_audio():
 def fetch_reddit_memes():
     # Use Meme API for reliable Indian content
     # We combine multiple subreddits with '+'
-    indian_subs = "IndianDankMemes+IndiaMemes+SaimanSays+DesiMemes+bakchodi+IndianMeyMeys+bollywoodmemes+HindiMemes"
+    # Added: Facts, Temples, Mythology, Beauty
+    indian_subs = "IndianDankMemes+IndiaMemes+SaimanSays+DesiMemes+bakchodi+IndianMeyMeys+bollywoodmemes+HindiMemes+damnthatsinteresting+BeAmazed+IncredibleIndia+TempleArchitecture+hindumemes+mythologymemes+PrettyGirls"
     
     memes = []
     try:
