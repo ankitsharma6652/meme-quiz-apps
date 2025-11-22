@@ -139,6 +139,36 @@ class UserMeme(db.Model):
     
     user = db.relationship('User', backref='memes')
 
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
+    meme_id = db.Column(db.Integer, db.ForeignKey('user_memes.id'), nullable=False)
+    content = db.Column(db.String(1000), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='comments')
+    meme = db.relationship('UserMeme', backref='comments')
+
+class Upvote(db.Model):
+    __tablename__ = 'upvotes'
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
+    meme_id = db.Column(db.Integer, db.ForeignKey('user_memes.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Unique constraint to prevent double voting
+    __table_args__ = (db.UniqueConstraint('user_email', 'meme_id', name='_user_meme_uc'),)
+
+class QuizScore(db.Model):
+    __tablename__ = 'quiz_scores'
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='scores')
+
 @login_manager.user_loader
 def load_user(user_email):
     return User.query.get(user_email)
@@ -952,17 +982,27 @@ def get_user_memes():
         if 'user_memes' not in inspector.get_table_names():
             return jsonify([])  # Return empty array if table doesn't exist
         
+        user = get_user_from_token()
+        
         # Get recent user-generated memes
         memes = UserMeme.query.order_by(UserMeme.created_at.desc()).limit(50).all()
         
         result = []
         for meme in memes:
+            has_upvoted = False
+            if user:
+                has_upvoted = Upvote.query.filter_by(user_email=user.email, meme_id=meme.id).first() is not None
+
             result.append({
-                'id': f'user_{meme.id}',
+                'id': meme.id, # Integer ID for internal use
+                'display_id': f'user_{meme.id}', # String ID for frontend
                 'title': meme.title,
                 'url': meme.image_data,  # Base64 data URL
                 'author': meme.user.name if meme.user else 'Anonymous',
+                'author_pic': meme.user.picture if meme.user else None,
                 'ups': meme.upvotes,
+                'has_upvoted': has_upvoted,
+                'comment_count': Comment.query.filter_by(meme_id=meme.id).count(),
                 'source': 'user_generated',
                 'isVideo': False,
                 'created_at': meme.created_at.isoformat()
@@ -972,6 +1012,105 @@ def get_user_memes():
     except Exception as e:
         print(f"Error fetching user memes: {str(e)}")
         return jsonify([])  # Return empty array on error
+
+@app.route('/api/memes/<int:meme_id>/upvote', methods=['POST'])
+def upvote_meme(meme_id):
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    meme = UserMeme.query.get(meme_id)
+    if not meme:
+        return jsonify({'error': 'Meme not found'}), 404
+        
+    existing_vote = Upvote.query.filter_by(user_email=user.email, meme_id=meme_id).first()
+    
+    if existing_vote:
+        # Toggle off
+        db.session.delete(existing_vote)
+        meme.upvotes = max(0, meme.upvotes - 1)
+        action = 'removed'
+    else:
+        # Toggle on
+        vote = Upvote(user_email=user.email, meme_id=meme_id)
+        db.session.add(vote)
+        meme.upvotes += 1
+        action = 'added'
+        
+    db.session.commit()
+    return jsonify({'success': True, 'upvotes': meme.upvotes, 'action': action})
+
+@app.route('/api/memes/<int:meme_id>/comments', methods=['GET', 'POST'])
+def handle_comments(meme_id):
+    if request.method == 'POST':
+        user = get_user_from_token()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+            
+        data = request.json
+        content = data.get('content')
+        if not content:
+            return jsonify({'error': 'Content required'}), 400
+            
+        comment = Comment(user_email=user.email, meme_id=meme_id, content=content)
+        db.session.add(comment)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'comment': {
+                'id': comment.id,
+                'user': user.name,
+                'picture': user.picture,
+                'content': comment.content,
+                'created_at': comment.created_at.isoformat()
+            }
+        })
+    else:
+        comments = Comment.query.filter_by(meme_id=meme_id).order_by(Comment.created_at.desc()).all()
+        return jsonify([{
+            'id': c.id,
+            'user': c.user.name,
+            'picture': c.user.picture,
+            'content': c.content,
+            'created_at': c.created_at.isoformat()
+        } for c in comments])
+
+@app.route('/api/quiz/score', methods=['POST'])
+def save_quiz_score():
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    data = request.json
+    score = data.get('score', 0)
+    
+    new_score = QuizScore(user_email=user.email, score=score)
+    db.session.add(new_score)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/leaderboard', methods=['GET'])
+def get_leaderboard():
+    try:
+        # Top Quiz Scores
+        top_scores = db.session.query(
+            User.name, User.picture, db.func.max(QuizScore.score).label('max_score')
+        ).join(QuizScore).group_by(User.email).order_by(db.desc('max_score')).limit(10).all()
+        
+        # Top Meme Creators (by total upvotes)
+        top_creators = db.session.query(
+            User.name, User.picture, db.func.sum(UserMeme.upvotes).label('total_upvotes')
+        ).join(UserMeme).group_by(User.email).order_by(db.desc('total_upvotes')).limit(10).all()
+        
+        return jsonify({
+            'quiz_leaders': [{'name': r[0], 'picture': r[1], 'score': r[2]} for r in top_scores],
+            'meme_leaders': [{'name': r[0], 'picture': r[1], 'upvotes': int(r[2] or 0)} for r in top_creators]
+        })
+    except Exception as e:
+        print(f"Leaderboard error: {e}")
+        return jsonify({'quiz_leaders': [], 'meme_leaders': []})
 
 if __name__ == '__main__':
     print("Starting MemeMaster Server...")

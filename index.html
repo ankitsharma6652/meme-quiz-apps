@@ -426,6 +426,14 @@
                     style="background:linear-gradient(135deg, #ff00cc, #333399);">
                     🔥 Load Viral Feed
                 </button>
+                <button id="user-feed-btn" onclick="loadUserFeed()" class="nav-btn"
+                    style="background:linear-gradient(135deg, #f093fb, #f5576c);">
+                    👥 User Feed
+                </button>
+                <button id="leaderboard-btn" onclick="openLeaderboard()" class="nav-btn"
+                    style="background:linear-gradient(135deg, #f6d365, #fda085);">
+                    🏆 Leaderboard
+                </button>
             </div>
         </div>
 
@@ -2705,6 +2713,343 @@
                 btn.disabled = false;
             };
             img.src = url;
+        }
+    </script>
+    <!-- Comments Modal -->
+    <div id="comments-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px; height: 80vh; display: flex; flex-direction: column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h2 style="margin:0;">💬 Comments</h2>
+                <button onclick="closeComments()"
+                    style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div id="comments-list"
+                style="flex:1; overflow-y:auto; margin-bottom:1rem; border:1px solid #333; border-radius:8px; padding:1rem;">
+                <!-- Comments injected here -->
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+                <input type="text" id="comment-input" placeholder="Write a comment..."
+                    style="flex:1; padding:0.8rem; border-radius:8px; border:1px solid #333; background:#0f0f13; color:white;">
+                <button id="post-comment-btn" onclick="postComment()"
+                    style="background:var(--secondary-color); color:white; border:none; padding:0 1.5rem; border-radius:8px; cursor:pointer;">Post</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <h2 style="margin:0;">🏆 Leaderboard</h2>
+                <button onclick="document.getElementById('leaderboard-modal').style.display='none'"
+                    style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                <button onclick="showLeaderboardTab('quiz')" id="tab-quiz" class="auth-btn btn-primary"
+                    style="flex:1;">🧠 Quiz Masters</button>
+                <button onclick="showLeaderboardTab('meme')" id="tab-meme" class="auth-btn btn-secondary"
+                    style="flex:1;">🎨 Meme Lords</button>
+            </div>
+
+            <div id="leaderboard-content">
+                <!-- Leaderboard injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Social Feed Logic ---
+        async function loadUserFeed() {
+            const loading = document.getElementById('loading');
+            const feedContainer = document.getElementById('feed-container');
+
+            // Hide other sections
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('generator-container').style.display = 'none';
+            document.getElementById('filter-section').style.display = 'none';
+            document.getElementById('load-more-btn').style.display = 'none';
+
+            loading.style.display = 'block';
+            feedContainer.innerHTML = '';
+
+            try {
+                const res = await fetch('/api/user-memes');
+                const memes = await res.json();
+
+                loading.style.display = 'none';
+
+                if (memes.length === 0) {
+                    feedContainer.innerHTML = '<p style="text-align:center; padding:3rem; color:#aaa;">No user memes yet. Be the first to create one!</p>';
+                    return;
+                }
+
+                memes.forEach(meme => {
+                    const card = document.createElement('div');
+                    card.className = 'meme-card';
+
+                    const upvoteBtnClass = meme.has_upvoted ? 'active' : '';
+                    const upvoteIcon = meme.has_upvoted ? '❤️' : '🤍';
+
+                    card.innerHTML = `
+                        <div class="meme-header" style="display:flex; align-items:center; margin-bottom:0.8rem;">
+                            <img src="${meme.author_pic || 'https://ui-avatars.com/api/?name=' + meme.author}" 
+                                style="width:32px; height:32px; border-radius:50%; margin-right:0.8rem;">
+                            <div>
+                                <div style="font-weight:600;">${meme.author}</div>
+                                <div style="font-size:0.8rem; color:#888;">${new Date(meme.created_at).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:0.5rem; font-size:1.1rem;">${meme.title}</div>
+                        
+                        <img src="${meme.url}" style="width:100%; border-radius:8px; margin-bottom:1rem;" loading="lazy">
+                        
+                        <div class="meme-footer" style="padding:0;">
+                            <button class="action-btn ${upvoteBtnClass}" onclick="toggleUpvote(${meme.id}, this)">
+                                ${upvoteIcon} <span class="count">${meme.ups}</span>
+                            </button>
+                            <button class="action-btn" onclick="openComments(${meme.id})">
+                                💬 <span class="count">${meme.comment_count}</span>
+                            </button>
+                            <button class="action-btn" onclick="shareMeme('${meme.url}')">↗️</button>
+                        </div>
+                    `;
+                    feedContainer.appendChild(card);
+                });
+
+            } catch (e) {
+                console.error(e);
+                loading.style.display = 'none';
+                feedContainer.innerHTML = '<p style="text-align:center; color:red;">Failed to load user feed.</p>';
+            }
+        }
+
+        async function toggleUpvote(memeId, btn) {
+            if (!currentUser) return alert('Please sign in to upvote!');
+
+            try {
+                const res = await fetch(`/api/memes/${memeId}/upvote`, { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    const countSpan = btn.querySelector('.count');
+                    countSpan.innerText = data.upvotes;
+                    if (data.action === 'added') {
+                        btn.classList.add('active');
+                        btn.firstChild.textContent = '❤️ ';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.firstChild.textContent = '🤍 ';
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- Comments Logic ---
+        let currentMemeIdForComments = null;
+
+        async function openComments(memeId) {
+            currentMemeIdForComments = memeId;
+            const modal = document.getElementById('comments-modal');
+            const list = document.getElementById('comments-list');
+            modal.style.display = 'flex';
+            list.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const res = await fetch(`/api/memes/${memeId}/comments`);
+                const comments = await res.json();
+
+                list.innerHTML = '';
+                if (comments.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:#888;">No comments yet.</p>';
+                } else {
+                    comments.forEach(c => {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '1rem';
+                        div.innerHTML = `
+                            <div style="display:flex; gap:0.5rem; margin-bottom:0.2rem;">
+                                <span style="font-weight:bold; color:var(--secondary-color);">${c.user}</span>
+                                <span style="font-size:0.8rem; color:#666;">${new Date(c.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div style="color:#ddd;">${c.content}</div>
+                        `;
+                        list.appendChild(div);
+                    });
+                }
+            } catch (e) {
+                list.innerHTML = '<p style="color:red;">Failed to load comments.</p>';
+            }
+        }
+
+        function closeComments() {
+            document.getElementById('comments-modal').style.display = 'none';
+            currentMemeIdForComments = null;
+        }
+
+        async function postComment() {
+            if (!currentUser) return alert('Please sign in to comment!');
+            const input = document.getElementById('comment-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            try {
+                const res = await fetch(`/api/memes/${currentMemeIdForComments}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+
+                if (res.ok) {
+                    input.value = '';
+                    openComments(currentMemeIdForComments); // Reload
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- Leaderboard Logic ---
+        async function openLeaderboard() {
+            const modal = document.getElementById('leaderboard-modal');
+            modal.style.display = 'flex';
+            showLeaderboardTab('quiz');
+        }
+
+        async function showLeaderboardTab(type) {
+            const content = document.getElementById('leaderboard-content');
+            content.innerHTML = '<div class="spinner"></div>';
+
+            // Update tabs
+            document.getElementById('tab-quiz').style.opacity = type === 'quiz' ? '1' : '0.5';
+            document.getElementById('tab-meme').style.opacity = type === 'meme' ? '1' : '0.5';
+
+            try {
+                const res = await fetch('/api/leaderboard');
+                const data = await res.json();
+                const list = type === 'quiz' ? data.quiz_leaders : data.meme_leaders;
+
+                content.innerHTML = list.map((u, i) => `
+                    <div style="display:flex; align-items:center; background:var(--card-bg); padding:1rem; border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border-color);">
+                        <div style="font-size:1.5rem; font-weight:bold; width:40px; color:${i < 3 ? '#ffd700' : '#888'};">#${i + 1}</div>
+                        <img src="${u.picture || 'https://ui-avatars.com/api/?name=' + u.name}" style="width:40px; height:40px; border-radius:50%; margin-right:1rem;">
+                        <div style="flex:1; font-weight:600;">${u.name}</div>
+                        <div style="font-weight:bold; color:var(--secondary-color);">
+                            ${type === 'quiz' ? u.score + ' pts' : u.upvotes + ' ❤️'}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                content.innerHTML = '<p style="color:red;">Failed to load leaderboard.</p>';
+            }
+        }
+
+        // --- Quiz Enhancements ---
+        let quizTimer;
+        let timeLeft;
+        let lives;
+
+        // Override startQuiz
+        const originalStartQuiz = startQuiz;
+        startQuiz = async function () {
+            lives = 3;
+            updateLivesUI();
+            await originalStartQuiz();
+        }
+
+        function updateLivesUI() {
+            // Add lives display if not exists
+            let livesContainer = document.getElementById('lives-display');
+            if (!livesContainer) {
+                livesContainer = document.createElement('div');
+                livesContainer.id = 'lives-display';
+                livesContainer.style.fontSize = '1.5rem';
+                livesContainer.style.marginBottom = '1rem';
+                const quizCard = document.getElementById('quiz-card');
+                if (quizCard) quizCard.parentNode.insertBefore(livesContainer, quizCard);
+            }
+            livesContainer.innerHTML = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
+        }
+
+        // Override renderQuizQuestion to start timer
+        const originalRenderQuizQuestion = renderQuizQuestion;
+        renderQuizQuestion = function (data) {
+            originalRenderQuizQuestion(data);
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(quizTimer);
+            timeLeft = 15;
+            const timerDisplay = document.getElementById('quiz-timer') || createTimerDisplay();
+            timerDisplay.innerText = `⏱️ ${timeLeft}s`;
+
+            quizTimer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = `⏱️ ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(quizTimer);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function createTimerDisplay() {
+            const el = document.createElement('div');
+            el.id = 'quiz-timer';
+            el.style.fontSize = '1.2rem';
+            el.style.fontWeight = 'bold';
+            el.style.color = 'var(--secondary-color)';
+            el.style.marginBottom = '1rem';
+            const quizCard = document.getElementById('quiz-card');
+            if (quizCard) quizCard.prepend(el);
+            return el;
+        }
+
+        function handleTimeOut() {
+            lives--;
+            updateLivesUI();
+            if (lives <= 0) endQuiz();
+            else {
+                alert('Time\'s up! Next question...');
+                loadQuizQuestion();
+            }
+        }
+
+        // Override checkAnswer
+        const originalCheckAnswer = checkAnswer;
+        checkAnswer = function (btn, selected, correct) {
+            clearInterval(quizTimer);
+            if (selected !== correct) {
+                lives--;
+                updateLivesUI();
+                if (lives <= 0) {
+                    btn.classList.add('wrong');
+                    setTimeout(endQuiz, 1000);
+                    return;
+                }
+            }
+            originalCheckAnswer(btn, selected, correct);
+        }
+
+        async function endQuiz() {
+            isQuizActive = false;
+            document.getElementById('quiz-card').innerHTML = `
+                <div style="text-align:center; padding:2rem;">
+                    <h2>Game Over!</h2>
+                    <p style="font-size:2rem; margin:1rem 0;">Score: ${quizScore}</p>
+                    <button onclick="startQuiz()" class="auth-btn btn-primary">Try Again</button>
+                    <button onclick="openLeaderboard()" class="auth-btn btn-secondary" style="margin-top:1rem;">View Leaderboard</button>
+                </div>
+            `;
+
+            // Save score
+            if (currentUser) {
+                await fetch('/api/quiz/score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ score: quizScore })
+                });
+            }
         }
     </script>
 </body>
