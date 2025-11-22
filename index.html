@@ -528,6 +528,39 @@
                                 </div>
                             </div>
 
+                            <!-- Effects & Stickers -->
+                            <div style="margin-top:1rem;">
+                                <label
+                                    style="font-size:0.9rem; color:#aaa; font-weight:bold; display:block; margin-bottom:0.5rem;">✨
+                                    Effects & Stickers</label>
+                                <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                                    <button id="deep-fry-btn" onclick="toggleDeepFry()"
+                                        style="background:linear-gradient(135deg, #ff9900, #ff0000); color:white; border:none; padding:0.5rem 1rem; border-radius:20px; cursor:pointer; font-weight:bold; font-size:0.9rem;">
+                                        🔥 Deep Fry
+                                    </button>
+
+                                    <!-- Emoji Bar -->
+                                    <div style="display:flex; gap:0.3rem; overflow-x:auto; padding-bottom:0.2rem;">
+                                        <button onclick="addSticker('😂')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">😂</button>
+                                        <button onclick="addSticker('💀')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">💀</button>
+                                        <button onclick="addSticker('🔥')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">🔥</button>
+                                        <button onclick="addSticker('🤡')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">🤡</button>
+                                        <button onclick="addSticker('🧢')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">🧢</button>
+                                        <button onclick="addSticker('🅱️')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">🅱️</button>
+                                        <button onclick="addSticker('🕶️')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">🕶️</button>
+                                        <button onclick="addSticker('💩')"
+                                            style="background:#333; border:none; font-size:1.5rem; cursor:pointer; border-radius:50%;">💩</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Custom Upload -->
                             <div style="border-top:1px solid #333; padding-top:1rem;">
                                 <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
@@ -1667,6 +1700,32 @@
 
         // Click to Add Text Logic
         let customTexts = []; // Array of {text, x, y, color, size}
+        let isDeepFried = false;
+
+        function toggleDeepFry() {
+            isDeepFried = !isDeepFried;
+            const btn = document.getElementById('deep-fry-btn');
+            if (isDeepFried) {
+                btn.style.boxShadow = "0 0 15px #ff0000";
+                btn.innerText = "🔥 Fried!";
+            } else {
+                btn.style.boxShadow = "none";
+                btn.innerText = "🔥 Deep Fry";
+            }
+            drawMeme();
+        }
+
+        function addSticker(emoji) {
+            // Add sticker to center
+            customTexts.push({
+                text: emoji,
+                x: memeCanvas.width / 2,
+                y: memeCanvas.height / 2,
+                color: '#ffffff',
+                size: 100 // Default large size for emojis
+            });
+            drawMeme();
+        }
 
         function handleCanvasClick(e) {
             if (isDrawMode) return; // Don't add text if drawing
@@ -1779,7 +1838,20 @@
                     drawCtx.drawImage(tempCanvas, 0, 0, memeCanvas.width, memeCanvas.height);
                 }
 
+                // Apply Deep Fry Filter to Context BEFORE drawing image
+                if (isDeepFried) {
+                    ctx.filter = 'contrast(200%) saturate(200%) brightness(110%)';
+                } else {
+                    ctx.filter = 'none';
+                }
+
                 ctx.drawImage(img, 0, 0, memeCanvas.width, memeCanvas.height);
+
+                // Reset filter for text/drawing so they stay sharp? 
+                // Actually deep fry usually applies to everything. 
+                // But let's keep text sharp for readability, or fry it all?
+                // "Dank" memes usually have fried text too. Let's keep the filter on!
+                // Wait, if I keep filter on, it applies to subsequent draws.
 
                 // Draw the drawing layer on top of image
                 ctx.drawImage(drawingLayer, 0, 0);
