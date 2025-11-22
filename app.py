@@ -522,6 +522,12 @@ def fetch_reddit_memes():
             data = response.json()
             posts = data.get('memes', [])
             
+            # Filter for Trending: Only keep memes with > 500 upvotes
+            posts = [p for p in posts if p.get('ups', 0) > 500]
+            
+            # Sort by upvotes (Highest first)
+            posts.sort(key=lambda x: x.get('ups', 0), reverse=True)
+            
             for post in posts:
                 # The API already filters for images mostly, but let's be safe
                 if post.get('nsfw'): 
@@ -863,9 +869,8 @@ def fetch_imgur_memes():
             items = data.get('memes', [])
             
             for item in items:
-                # Generate unique ID from URL
-                import hashlib
                 url = item.get('url', '')
+                import hashlib
                 unique_id = hashlib.md5(url.encode()).hexdigest()[:12] if url else 'unknown'
                 
                 meme = {
