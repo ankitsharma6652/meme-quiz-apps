@@ -602,6 +602,46 @@
             }
         }
 
+        // Client-side video fetching to bypass server blocks
+        async function fetchRedditVideos() {
+            const subs = ['DesiVideoMemes', 'IndianDankMemes', 'bollywoodmemes'];
+            const videos = [];
+
+            const fetchPromises = subs.map(async sub => {
+                try {
+                    // Use AllOrigins as a CORS proxy
+                    const targetUrl = encodeURIComponent(`https://www.reddit.com/r/${sub}/hot.json?limit=25`);
+                    const response = await fetch(`https://api.allorigins.win/raw?url=${targetUrl}`);
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    const posts = data.data.children;
+
+                    posts.forEach(post => {
+                        const p = post.data;
+                        if (p.is_video && p.media && p.media.reddit_video) {
+                            videos.push({
+                                id: p.id,
+                                title: p.title,
+                                url: p.url, // Fallback
+                                meme_url: p.media.reddit_video.fallback_url, // Video URL
+                                is_video: true,
+                                source: `r/${sub}`,
+                                ups: p.ups,
+                                author: p.author,
+                                permalink: `https://reddit.com${p.permalink}`
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.warn(`Failed to fetch videos from ${sub}:`, e);
+                }
+            });
+
+            await Promise.all(fetchPromises);
+            return videos;
+        }
+
         async function loadMemes(append = false) {
             const loading = document.getElementById('loading');
             const feedContainer = document.getElementById('feed-container');
