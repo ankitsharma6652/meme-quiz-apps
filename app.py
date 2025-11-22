@@ -418,13 +418,18 @@ def fetch_imgur_memes():
             items = data.get('memes', [])
             
             for item in items:
+                # Generate unique ID from URL
+                import hashlib
+                url = item.get('url', '')
+                unique_id = hashlib.md5(url.encode()).hexdigest()[:12] if url else 'unknown'
+                
                 meme = {
-                    'id': f"memeapi_{item.get('postLink', '').split('/')[-2]}",
+                    'id': f"memeapi_{unique_id}",
                     'title': item.get('title', 'Viral Meme')[:100],
                     'ups': item.get('ups', 0),
-                    'is_video': item.get('url', '').endswith(('.mp4', '.gif')),
-                    'url': item.get('url', ''),
-                    'source': 'Imgur'
+                    'is_video': url.endswith(('.mp4', '.gif')),
+                    'url': url,
+                    'source': 'Meme API'
                 }
                 
                 if meme['is_video']:
