@@ -396,7 +396,8 @@ def fetch_reddit_memes():
     # Prioritize Indian subreddits - HEAVILY
     indian_subreddits = [
         'IndianDankMemes', 'IndiaMemes', 'SaimanSays', 'DesiMemes', 
-        'bakchodi', 'IndianMeyMeys', 'bollywoodmemes', 'Chodi'
+        'bakchodi', 'IndianMeyMeys', 'bollywoodmemes', 'HindiMemes',
+        'IndianHumor', 'DesiVideoMemes'
     ]
     global_subreddits = ['memes', 'dankmemes', 'wholesomememes']
     
@@ -407,7 +408,8 @@ def fetch_reddit_memes():
         # 1. Fetch from Indian Subreddits (High Priority)
         for sub in indian_subreddits:
             try:
-                url = f'https://www.reddit.com/r/{sub}/hot.json?limit=40' # Fetch MORE
+                # Fetch MORE (100) because many are videos/text which we skip
+                url = f'https://www.reddit.com/r/{sub}/hot.json?limit=100' 
                 response = requests.get(url, headers=headers, timeout=3)
                 if response.status_code == 200:
                     data = response.json()
