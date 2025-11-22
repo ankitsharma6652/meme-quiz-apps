@@ -526,15 +526,6 @@
                                             style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">Clear</button>
                                     </div>
                                 </div>
-
-                                <!-- Text Selection Controls -->
-                                <div id="text-controls"
-                                    style="display:none; margin-top:0.5rem; background:#2a2a2f; padding:0.5rem; border-radius:8px; align-items:center; justify-content:space-between;">
-                                    <span style="font-size:0.8rem; color:#aaa;">Text Selected</span>
-                                    <button onclick="deleteSelectedText()"
-                                        style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">🗑️
-                                        Delete</button>
-                                </div>
                             </div>
 
                             <!-- Effects & Stickers -->
@@ -570,44 +561,88 @@
                                 </div>
                             </div>
 
-                            <!-- Custom Upload -->
-                            <div style="border-top:1px solid #333; padding-top:1rem;">
-                                <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
-                                    upload your own image:</label>
-                                <input type="file" id="custom-image-upload" accept="image/*"
-                                    onchange="handleImageUpload(this)"
-                                    style="color:#aaa; font-size:0.9rem; width:100%;">
-                            </div>
-
-                            <!-- AI Generation -->
-                            <div style="border-top:1px solid #333; padding-top:1rem; margin-top:1rem;">
-                                <label
-                                    style="display:block; margin-bottom:0.5rem; color:#00d2ff; font-size:0.9rem; font-weight:bold;">✨
-                                    AI Image Generator (Free Unlimited)</label>
-                                <div style="display:flex; gap:0.5rem;">
-                                    <input type="text" id="ai-prompt" placeholder="e.g. Cyberpunk cat eating pizza"
-                                        style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px;">
-                                    <button onclick="generateAIImage()"
-                                        style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
-                                        Generate
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div style="display:flex; gap:1rem; margin-top:1rem;">
-                                <button onclick="downloadCreatedMeme()"
-                                    style="flex:1; background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                                    💾 Download
-                                </button>
-                                <button onclick="shareCreatedMeme()"
-                                    style="flex:1; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                                    📤 Share
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Slack Stickers -->
+                <div style="margin-top:1rem;">
+                    <label
+                        style="font-size:0.9rem; color:#aaa; font-weight:bold; display:block; margin-bottom:0.5rem;">🚀
+                        Slack Stickers</label>
+                    <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.5rem;">
+                        <img src="https://cultofthepartyparrot.com/parrots/hd/parrot.gif"
+                            onclick="addCustomImage('https://cultofthepartyparrot.com/parrots/hd/parrot.gif')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Party Parrot">
+                        <img src="https://cultofthepartyparrot.com/parrots/hd/dealwithitparrot.gif"
+                            onclick="addCustomImage('https://cultofthepartyparrot.com/parrots/hd/dealwithitparrot.gif')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Deal With It">
+                        <img src="https://emoji.gg/assets/emoji/9694_doge.png"
+                            onclick="addCustomImage('https://emoji.gg/assets/emoji/9694_doge.png')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Doge">
+                        <img src="https://emoji.gg/assets/emoji/6262_Pepe_Business.png"
+                            onclick="addCustomImage('https://emoji.gg/assets/emoji/6262_Pepe_Business.png')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Pepe">
+                        <img src="https://emoji.gg/assets/emoji/3242_This_is_Fine.png"
+                            onclick="addCustomImage('https://emoji.gg/assets/emoji/3242_This_is_Fine.png')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="This is Fine">
+                        <img src="https://emoji.gg/assets/emoji/9552-catjam.gif"
+                            onclick="addCustomImage('https://emoji.gg/assets/emoji/9552-catjam.gif')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Cat Jam">
+                        <img src="https://emoji.gg/assets/emoji/4860-hackerman.gif"
+                            onclick="addCustomImage('https://emoji.gg/assets/emoji/4860-hackerman.gif')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Hackerman">
+                        <img src="https://emoji.gg/assets/emoji/5538-stonks-up.png"
+                            onclick="addCustomImage('https://emoji.gg/assets/emoji/5538-stonks-up.png')"
+                            style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
+                            title="Stonks">
+                    </div>
+                </div>
+
+                <!-- Custom Upload -->
+                <div style="border-top:1px solid #333; padding-top:1rem;">
+                    <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
+                        upload your own image:</label>
+                    <input type="file" id="custom-image-upload" accept="image/*" onchange="handleImageUpload(this)"
+                        style="color:#aaa; font-size:0.9rem; width:100%;">
+                </div>
+
+                <!-- AI Generation -->
+                <div style="border-top:1px solid #333; padding-top:1rem; margin-top:1rem;">
+                    <label
+                        style="display:block; margin-bottom:0.5rem; color:#00d2ff; font-size:0.9rem; font-weight:bold;">✨
+                        AI Image Generator (Free Unlimited)</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="text" id="ai-prompt" placeholder="e.g. Cyberpunk cat eating pizza"
+                            style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px;">
+                        <button onclick="generateAIImage()"
+                            style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
+                            Generate
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                    <button onclick="downloadCreatedMeme()"
+                        style="flex:1; background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
+                        💾 Download
+                    </button>
+                    <button onclick="shareCreatedMeme()"
+                        style="flex:1; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
+                        📤 Share
+                    </button>
+                </div>
             </div>
+        </div>
+        </div>
+        </div>
         </div>
 
         <div id="load-more-btn" style="display:none; text-align:center; margin-top:3rem;">
@@ -1708,10 +1743,12 @@
         }
 
         // Click to Add Text & Drag Logic
-        let customTexts = []; // Array of {text, x, y, color, size}
+        // canvasObjects: Array of { type: 'text'|'image', content: string, x, y, color?, size, width?, height?, imgObj? }
+        let canvasObjects = [];
         let isDeepFried = false;
-        let selectedTextIndex = -1;
-        let isDraggingText = false;
+        let selectedObjectIndex = -1;
+        let isDraggingObject = false;
+        let dragStartX, dragStartY; // To store initial mouse position for dragging
 
         function toggleDeepFry() {
             isDeepFried = !isDeepFried;
@@ -1727,44 +1764,72 @@
         }
 
         function addSticker(emoji) {
-            // Add sticker to center
-            customTexts.push({
-                text: emoji,
+            // Add emoji as text
+            canvasObjects.push({
+                type: 'text',
+                content: emoji,
                 x: memeCanvas.width / 2,
                 y: memeCanvas.height / 2,
                 color: '#ffffff',
-                size: 100 // Default large size for emojis
+                size: 100
             });
-            selectedTextIndex = customTexts.length - 1; // Select new sticker
+            selectedObjectIndex = canvasObjects.length - 1;
             drawMeme();
         }
 
-        function deleteSelectedText() {
-            if (selectedTextIndex !== -1) {
-                customTexts.splice(selectedTextIndex, 1);
-                selectedTextIndex = -1;
+        function addCustomImage(url) {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                // Default size: 100px width, maintain aspect ratio
+                const scale = 100 / img.width;
+                canvasObjects.push({
+                    type: 'image',
+                    content: url,
+                    x: memeCanvas.width / 2,
+                    y: memeCanvas.height / 2,
+                    width: 100,
+                    height: img.height * scale,
+                    imgObj: img
+                });
+                selectedObjectIndex = canvasObjects.length - 1;
+                drawMeme();
+            };
+            img.src = url;
+        }
+
+        function deleteSelectedObject() {
+            if (selectedObjectIndex !== -1) {
+                canvasObjects.splice(selectedObjectIndex, 1);
+                selectedObjectIndex = -1;
                 drawMeme();
             }
         }
 
-        function getHitTextIndex(x, y) {
-            // Iterate backwards to select top-most text first
-            for (let i = customTexts.length - 1; i >= 0; i--) {
-                const ct = customTexts[i];
-                const fontSize = Math.floor(memeCanvas.width * (ct.size / 400));
-                ctx.font = `bold ${fontSize}px Impact, sans-serif`;
-                const metrics = ctx.measureText(ct.text);
-                const width = metrics.width;
-                const height = fontSize; // Approx height
+        function getHitObjectIndex(x, y) {
+            // Iterate backwards to select top-most item first
+            for (let i = canvasObjects.length - 1; i >= 0; i--) {
+                const obj = canvasObjects[i];
+                let left, right, top, bottom;
 
-                // Text is drawn centered at ct.x, ct.y (middle baseline approx)
-                const left = ct.x - width / 2;
-                const right = ct.x + width / 2;
-                const top = ct.y - height / 2;
-                const bottom = ct.y + height / 2;
+                if (obj.type === 'text') {
+                    const fontSize = Math.floor(memeCanvas.width * (obj.size / 400));
+                    ctx.font = `bold ${fontSize}px Impact, sans-serif`;
+                    const metrics = ctx.measureText(obj.content);
+                    const width = metrics.width;
+                    const height = fontSize;
+                    left = obj.x - width / 2;
+                    right = obj.x + width / 2;
+                    top = obj.y - height / 2;
+                    bottom = obj.y + height / 2;
+                } else if (obj.type === 'image') {
+                    left = obj.x - obj.width / 2;
+                    right = obj.x + obj.width / 2;
+                    top = obj.y - obj.height / 2;
+                    bottom = obj.y + obj.height / 2;
+                }
 
-                // Add some padding for easier selection
-                const pad = 10;
+                const pad = 10; // Add some padding for easier clicking
                 if (x >= left - pad && x <= right + pad && y >= top - pad && y <= bottom + pad) {
                     return i;
                 }
@@ -1772,104 +1837,112 @@
             return -1;
         }
 
-        function handleCanvasInteraction(e, isTouch = false) {
+        function handleCanvasInteractionStart(e) {
+            if (isDrawMode) {
+                startDrawing(e);
+                return;
+            }
+
             const rect = memeCanvas.getBoundingClientRect();
-            const clientX = isTouch ? e.touches[0].clientX : e.clientX;
-            const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+            const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
 
-            const x = (clientX - rect.left) * (memeCanvas.width / rect.width);
-            const y = (clientY - rect.top) * (memeCanvas.height / rect.height);
-
-            // Check if we hit existing text
-            const hitIndex = getHitTextIndex(x, y);
-
-            if (hitIndex !== -1) {
-                // Select text and start dragging
-                selectedTextIndex = hitIndex;
-                isDraggingText = true;
-                drawMeme();
+            selectedObjectIndex = getHitObjectIndex(x, y);
+            if (selectedObjectIndex !== -1) {
+                isDraggingObject = true;
+                dragStartX = x - canvasObjects[selectedObjectIndex].x;
+                dragStartY = y - canvasObjects[selectedObjectIndex].y;
+                memeCanvas.style.cursor = 'grabbing';
             } else {
-                // Deselect if clicked elsewhere
-                if (selectedTextIndex !== -1) {
-                    selectedTextIndex = -1;
-                    drawMeme();
-                    return;
-                }
-
-                // Add new text if nothing selected and not dragging
+                // If no object is selected, prompt to add new text
                 const text = prompt("Enter text to add here:");
                 if (text) {
-                    customTexts.push({
-                        text: text,
+                    canvasObjects.push({
+                        type: 'text',
+                        content: text,
                         x: x,
                         y: y,
                         color: document.getElementById('text-color').value,
                         size: document.getElementById('font-size').value
                     });
-                    selectedTextIndex = customTexts.length - 1;
-                    drawMeme();
+                    selectedObjectIndex = canvasObjects.length - 1;
                 }
             }
+            drawMeme(); // Redraw to show selection or new text
         }
 
-        function handleDrag(e, isTouch = false) {
-            if (isDraggingText && selectedTextIndex !== -1) {
-                if (isTouch) e.preventDefault(); // Prevent scrolling
+        function handleCanvasInteractionMove(e) {
+            if (isDrawMode) {
+                draw(e);
+                return;
+            }
 
+            if (isDraggingObject && selectedObjectIndex !== -1) {
                 const rect = memeCanvas.getBoundingClientRect();
-                const clientX = isTouch ? e.touches[0].clientX : e.clientX;
-                const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+                const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
 
-                const x = (clientX - rect.left) * (memeCanvas.width / rect.width);
-                const y = (clientY - rect.top) * (memeCanvas.height / rect.height);
-
-                customTexts[selectedTextIndex].x = x;
-                customTexts[selectedTextIndex].y = y;
+                canvasObjects[selectedObjectIndex].x = x - dragStartX;
+                canvasObjects[selectedObjectIndex].y = y - dragStartY;
                 drawMeme();
-            } else if (isDrawMode) {
-                if (isTouch) {
-                    const rect = memeCanvas.getBoundingClientRect();
-                    const x = (e.touches[0].clientX - rect.left) * (memeCanvas.width / rect.width);
-                    const y = (e.touches[0].clientY - rect.top) * (memeCanvas.height / rect.height);
-                    draw({ offsetX: x, offsetY: y });
+            } else {
+                // Change cursor if hovering over an object
+                const rect = memeCanvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
+                if (getHitObjectIndex(x, y) !== -1) {
+                    memeCanvas.style.cursor = 'grab';
                 } else {
-                    draw(e);
+                    memeCanvas.style.cursor = 'default';
                 }
             }
         }
 
-        function stopDrag() {
-            isDraggingText = false;
-            if (isDrawing) stopDrawing();
+        function handleCanvasInteractionEnd() {
+            if (isDrawMode) {
+                stopDrawing();
+                return;
+            }
+            isDraggingObject = false;
+            memeCanvas.style.cursor = 'default';
         }
 
         // Event Listeners for Drawing & Clicking
-        memeCanvas.addEventListener('mousedown', (e) => {
-            if (isDrawMode) startDrawing(e);
-            else handleCanvasInteraction(e, false);
-        });
-
-        memeCanvas.addEventListener('mousemove', (e) => handleDrag(e, false));
-        memeCanvas.addEventListener('mouseup', stopDrag);
-        memeCanvas.addEventListener('mouseout', stopDrag);
+        memeCanvas.addEventListener('mousedown', handleCanvasInteractionStart);
+        memeCanvas.addEventListener('mousemove', handleCanvasInteractionMove);
+        memeCanvas.addEventListener('mouseup', handleCanvasInteractionEnd);
+        memeCanvas.addEventListener('mouseout', handleCanvasInteractionEnd);
 
         // Touch support
         memeCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = memeCanvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (memeCanvas.height / rect.height);
+
             if (isDrawMode) {
-                e.preventDefault();
-                const rect = memeCanvas.getBoundingClientRect();
-                const x = (e.touches[0].clientX - rect.left) * (memeCanvas.width / rect.width);
-                const y = (e.touches[0].clientY - rect.top) * (memeCanvas.height / rect.height);
                 startDrawing({ offsetX: x, offsetY: y });
             } else {
-                // For touch, we need to distinguish tap vs drag start
-                // But handleCanvasInteraction handles selection which initiates drag
-                handleCanvasInteraction(e, true);
+                // Simulate mousedown for object interaction
+                handleCanvasInteractionStart({ clientX: touch.clientX, clientY: touch.clientY });
             }
         });
+        memeCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = memeCanvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (memeCanvas.height / rect.height);
 
-        memeCanvas.addEventListener('touchmove', (e) => handleDrag(e, true));
-        memeCanvas.addEventListener('touchend', stopDrag);
+            if (isDrawMode) {
+                draw({ offsetX: x, offsetY: y });
+            } else {
+                // Simulate mousemove for object interaction
+                handleCanvasInteractionMove({ clientX: touch.clientX, clientY: touch.clientY });
+            }
+        });
+        memeCanvas.addEventListener('touchend', handleCanvasInteractionEnd);
 
         function startDrawing(e) {
             if (!isDrawMode) return;
@@ -1980,33 +2053,46 @@
                     ctx.strokeText(bottomText, x, y);
                 }
 
-                // Draw Custom Texts
-                customTexts.forEach((ct, index) => {
-                    ctx.fillStyle = ct.color;
-                    ctx.strokeStyle = outlineColor;
-                    const ctFontSize = Math.floor(memeCanvas.width * (ct.size / 400));
-                    ctx.font = `bold ${ctFontSize}px Impact, sans-serif`;
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(ct.text, ct.x, ct.y);
-                    ctx.strokeText(ct.text, ct.x, ct.y);
+                // Draw Custom Objects (Text & Images)
+                canvasObjects.forEach((obj, index) => {
+                    let width, height;
+
+                    if (obj.type === 'text') {
+                        ctx.fillStyle = obj.color;
+                        ctx.strokeStyle = outlineColor;
+                        const fontSize = Math.floor(memeCanvas.width * (obj.size / 400));
+                        ctx.font = `bold ${fontSize}px Impact, sans-serif`;
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(obj.content, obj.x, obj.y);
+                        ctx.strokeText(obj.content, obj.x, obj.y);
+
+                        const metrics = ctx.measureText(obj.content);
+                        width = metrics.width;
+                        height = fontSize;
+                    } else if (obj.type === 'image' && obj.imgObj) {
+                        // Draw image centered at x,y
+                        ctx.drawImage(obj.imgObj, obj.x - obj.width / 2, obj.y - obj.height / 2, obj.width, obj.height);
+                        width = obj.width;
+                        height = obj.height;
+                    }
 
                     // Draw selection box if selected
-                    if (index === selectedTextIndex) {
-                        const metrics = ctx.measureText(ct.text);
-                        const width = metrics.width;
-                        const height = ctFontSize;
+                    if (index === selectedObjectIndex) {
                         ctx.strokeStyle = '#00d2ff';
                         ctx.lineWidth = 2;
                         ctx.setLineDash([5, 5]);
-                        ctx.strokeRect(ct.x - width / 2 - 5, ct.y - height / 2 - 5, width + 10, height + 10);
+                        ctx.strokeRect(obj.x - width / 2 - 5, obj.y - height / 2 - 5, width + 10, height + 10);
                         ctx.setLineDash([]);
                     }
                 });
 
                 // Show/Hide Text Controls
                 const textControls = document.getElementById('text-controls');
-                if (selectedTextIndex !== -1) {
+                if (selectedObjectIndex !== -1) {
                     textControls.style.display = 'flex';
+                    // Update label based on type
+                    const label = textControls.querySelector('span');
+                    if (label) label.innerText = canvasObjects[selectedObjectIndex].type === 'text' ? 'Text Selected' : 'Sticker Selected';
                 } else {
                     textControls.style.display = 'none';
                 }
