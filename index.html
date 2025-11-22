@@ -740,7 +740,7 @@
 
                 // Fallback
                 try {
-                    const videoMemes = await fetchRSSVideos(); // Fixed function name
+                    const videoMemes = await fetchRSSVideos();
                     if (videoMemes.length > 0) {
                         if (!append) {
                             allMemes = videoMemes;
@@ -825,23 +825,45 @@
                 const heartIcon = isFav ? '❤️' : '🤍';
                 const activeClass = isFav ? 'active' : '';
 
-                // HLS Video Player (Proxied to bypass CORS)
-                const rawHlsUrl = `https://v.redd.it/${meme.id}/HLSPlaylist.m3u8`;
-                const hlsUrl = `https://corsproxy.io/?${encodeURIComponent(rawHlsUrl)}`;
-                const uniqueId = `hls-${meme.id}`;
+                // Custom Sync Player (Video + Audio) - No Proxy, No HLS
+                const uniqueId = `player-${meme.id}`;
+                const audioSrc = `https://v.redd.it/${meme.id}/DASH_audio.mp4`;
 
                 const mediaContent = meme.is_video ? `
-                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden; min-height:300px;">
-                        <video 
-                            id="${uniqueId}" 
-                            class="hls-video" 
-                            data-hls-url="${hlsUrl}"
-                            controls 
-                            playsinline 
+                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden;" class="custom-player" id="${uniqueId}">
+                        <video
+                            id="${uniqueId}-video"
+                            playsinline
                             loop
                             poster="${meme.url}"
-                            style="width:100%; height:100%; max-height:600px; object-fit:contain;"
-                        ></video>
+                            referrerpolicy="no-referrer"
+                            style="width:100%; max-height:600px; object-fit:contain; display:block; cursor:pointer;"
+                            onclick="togglePlay('${uniqueId}')"
+                            onerror="console.error('Video error:', this.error)"
+                        >
+                            <!-- Try multiple qualities -->
+                            <source src="https://v.redd.it/${meme.id}/DASH_1080.mp4" type="video/mp4">
+                            <source src="https://v.redd.it/${meme.id}/DASH_720.mp4" type="video/mp4">
+                            <source src="https://v.redd.it/${meme.id}/DASH_480.mp4" type="video/mp4">
+                            <source src="https://v.redd.it/${meme.id}/DASH_360.mp4" type="video/mp4">
+                            <source src="https://v.redd.it/${meme.id}/DASH_240.mp4" type="video/mp4">
+                        </video>
+
+                        <audio id="${uniqueId}-audio" loop style="display:none;" onerror="console.log('Audio missing for ${meme.id}')">
+                            <source src="${audioSrc}" type="audio/mp4">
+                        </audio>
+
+                        <!-- Custom Controls Overlay -->
+                        <div id="${uniqueId}-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none; transition:opacity 0.3s;">
+                            <div style="background:rgba(0,0,0,0.6); border-radius:50%; padding:1.5rem; display:flex; align-items:center; justify-content:center;">
+                                <span style="font-size:2rem;">▶️</span>
+                            </div>
+                        </div>
+
+                        <!-- Mute Toggle -->
+                        <button onclick="toggleMute(event, '${uniqueId}')" style="position:absolute; bottom:15px; right:15px; background:rgba(0,0,0,0.6); border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; color:white; font-size:1.2rem; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">
+                            <span id="${uniqueId}-mute-icon">🔇</span>
+                        </button>
                     </div>
                 ` : `
                     <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage unavailable%3C/text%3E%3C/svg%3E'">
@@ -868,9 +890,6 @@
                 card.appendChild(footer);
                 container.appendChild(card);
             });
-
-            // Re-initialize HLS for new elements
-            initHLS();
         }
 
         function shareMeme(url) {
@@ -929,41 +948,46 @@
                 } catch (e) { console.error(e); }
             }
         }
-        function initHLS() {
-            if (!Hls.isSupported()) return;
 
-            document.querySelectorAll('.hls-video').forEach(video => {
-                if (video.dataset.hlsInitialized) return;
+        // Custom Player Controls
+        function togglePlay(id) {
+            const video = document.getElementById(`${id}-video`);
+            const audio = document.getElementById(`${id}-audio`);
+            const overlay = document.getElementById(`${id}-overlay`);
 
-                const hlsUrl = video.dataset.hlsUrl;
-                const hls = new Hls();
-                hls.loadSource(hlsUrl);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    // Ready to play
-                });
-                hls.on(Hls.Events.ERROR, function (event, data) {
-                    if (data.fatal) {
-                        switch (data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log("fatal network error encountered, try to recover");
-                                hls.startLoad();
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.log("fatal media error encountered, try to recover");
-                                hls.recoverMediaError();
-                                break;
-                            default:
-                                hls.destroy();
-                                break;
-                        }
-                    }
-                });
+            if (video.paused) {
+                video.play();
+                audio.play().catch(e => console.log("Audio play failed (might be missing):", e));
+                overlay.style.opacity = '0';
+            } else {
+                video.pause();
+                audio.pause();
+                overlay.style.opacity = '1';
+            }
 
-                video.dataset.hlsInitialized = "true";
-            });
+            // Sync check
+            if (Math.abs(video.currentTime - audio.currentTime) > 0.5) {
+                audio.currentTime = video.currentTime;
+            }
+        }
+
+        function toggleMute(e, id) {
+            e.stopPropagation();
+            const video = document.getElementById(`${id}-video`);
+            const audio = document.getElementById(`${id}-audio`);
+            const icon = document.getElementById(`${id}-mute-icon`);
+
+            if (audio.muted || audio.volume === 0) {
+                audio.muted = false;
+                audio.volume = 1;
+                icon.innerHTML = '🔊';
+            } else {
+                audio.muted = true;
+                icon.innerHTML = '🔇';
+            }
         }
     </script>
 </body>
 
 </html>
+```
