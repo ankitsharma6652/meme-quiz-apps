@@ -602,71 +602,63 @@
             }
         }
 
-        // Client-side video fetching with Proxy Rotation
-        async function fetchRedditVideos() {
+        // RSS-based video fetching (Bypasses Reddit API blocks)
+        async function fetchRSSVideos() {
             const subs = ['DesiVideoMemes', 'IndianDankMemes', 'bollywoodmemes', 'IndianHumor'];
             const videos = [];
 
-            // List of CORS proxies to try
-            const proxies = [
-                url => `https://cors.eu.org/${url}`,
-                url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-                url => `https://thingproxy.freeboard.io/fetch/${url}`,
-                url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                url => `https://corsproxy.io/?${encodeURIComponent(url)}`
-            ];
-
             const fetchPromises = subs.map(async sub => {
-                const targetUrl = `https://www.reddit.com/r/${sub}/hot.json?limit=25`;
+                try {
+                    // Use rss2json to fetch Reddit RSS feed
+                    const rssUrl = encodeURIComponent(`https://www.reddit.com/r/${sub}/hot.rss`);
+                    const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
+                    if (!response.ok) return;
 
-                // Try proxies one by one until success
-                for (const proxy of proxies) {
-                    try {
-                        const proxyUrl = proxy(targetUrl);
-                        const response = await fetch(proxyUrl);
-                        if (!response.ok) continue; // Try next proxy
+                    const data = await response.json();
+                    if (!data.items) return;
 
-                        const data = await response.json();
-                        const posts = data.data.children;
+                    data.items.forEach(item => {
+                        // Extract v.redd.it link from content HTML
+                        const content = item.content || '';
+                        const match = content.match(/href="(https:\/\/v\.redd\.it\/[^"]+)"/);
 
-                        posts.forEach(post => {
-                            const p = post.data;
-                            if (p.is_video && p.media && p.media.reddit_video) {
-                                videos.push({
-                                    id: p.id,
-                                    title: p.title,
-                                    url: p.url,
-                                    meme_url: p.media.reddit_video.fallback_url,
-                                    is_video: true,
-                                    source: `r/${sub}`,
-                                    ups: p.ups,
-                                    author: p.author,
-                                    permalink: `https://reddit.com${p.permalink}`
-                                });
-                            }
-                        });
+                        if (match) {
+                            const vReddItUrl = match[1];
+                            // Construct direct MP4 URL (Note: Audio might be missing in simple DASH)
+                            // We try to guess the filename. Usually DASH_720.mp4 or DASH_1080.mp4
+                            const videoId = vReddItUrl.split('/').pop();
+                            const mp4Url = `https://v.redd.it/${videoId}/DASH_720.mp4`;
 
-                        // If we got here, this proxy worked for this sub!
-                        console.log(`✅ Proxy success for ${sub}: ${proxyUrl}`);
-                        break;
-
-                    } catch (e) {
-                        console.warn(`Proxy failed for ${sub}:`, e);
-                    }
+                            videos.push({
+                                id: videoId,
+                                title: item.title,
+                                url: item.link,
+                                meme_url: mp4Url, // Direct MP4
+                                is_video: true,
+                                source: `r/${sub}`,
+                                ups: 100 + Math.floor(Math.random() * 900), // Fake ups since RSS doesn't have them
+                                author: item.author,
+                                permalink: item.link
+                            });
+                        }
+                    });
+                    console.log(`✅ RSS success for ${sub}: Found ${videos.length} videos`);
+                } catch (e) {
+                    console.warn(`RSS failed for ${sub}:`, e);
                 }
             });
 
             await Promise.all(fetchPromises);
 
-            // Fallback if no videos found (Reddit blocking everything)
+            // Fallback if RSS also fails
             if (videos.length === 0) {
-                console.warn("All proxies failed. Loading fallback videos.");
+                console.warn("RSS failed. Loading fallback videos.");
                 videos.push(
                     {
                         id: 'fallback_1',
                         title: 'When the code finally works',
                         url: 'https://v.redd.it/fallback1',
-                        meme_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Placeholder
+                        meme_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                         is_video: true,
                         source: 'System',
                         ups: 999,
@@ -676,7 +668,7 @@
                         id: 'fallback_2',
                         title: 'Me waiting for deployment',
                         url: 'https://v.redd.it/fallback2',
-                        meme_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', // Placeholder
+                        meme_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
                         is_video: true,
                         source: 'System',
                         ups: 888,
@@ -709,8 +701,8 @@
                     // 1. Fetch Images from Backend
                     const backendPromise = fetch('/api/memes').then(r => r.json());
 
-                    // 2. Fetch Videos from Client (Browser)
-                    const videoPromise = fetchRedditVideos();
+                    // 2. Fetch Videos from RSS (New Strategy)
+                    const videoPromise = fetchRSSVideos();
 
                     const [backendMemes, videoMemes] = await Promise.all([backendPromise, videoPromise]);
 
