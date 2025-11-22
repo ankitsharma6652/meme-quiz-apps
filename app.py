@@ -369,22 +369,29 @@ def remove_favorite_by_meme():
     
     return jsonify({'message': 'Removed from favorites'})
 
-# Quiz Subreddits
-QUIZ_SUBREDDITS = [
-    'IndianDankMemes', 'IndiaMemes', 'SaimanSays', 'DesiMemes', 
-    'bakchodi', 'IndianMeyMeys', 'bollywoodmemes', 'HindiMemes',
-    'memes', 'dankmemes', 'wholesomememes', 'me_irl', 'funny',
-    'ProgrammerHumor', 'gaming', 'aww'
-]
+# Quiz Categories
+QUIZ_CATEGORIES = {
+    'Coding & Tech': ['ProgrammerHumor', 'linuxmemes', 'programminghumor', 'softwaregore'],
+    'Gaming': ['gaming', 'pcmasterrace', 'MinecraftMemes', 'LeagueOfMemes', 'GamersReactSubmission'],
+    'Cute & Wholesome': ['aww', 'wholesomememes', 'Eyebleach', 'AnimalsBeingDerps', 'MadeMeSmile'],
+    'Bollywood': ['bollywoodmemes', 'BollyBlindsNGossip'],
+    'Desi Humor': ['IndianDankMemes', 'DesiMemes', 'bakchodi', 'IndianMeyMeys', 'HindiMemes'],
+    'Global Viral': ['memes', 'dankmemes', 'me_irl', 'funny', 'facepalm', 'HolUp'],
+    'Science & History': ['HistoryMemes', 'sciencememes', 'physicsmemes', 'SpaceMemes'],
+    'Anime': ['animememes', 'Animemes', 'goodanimemes']
+}
 
 @app.route('/api/quiz/question', methods=['GET'])
 def get_quiz_question():
     try:
-        # Pick a random subreddit for the correct answer
-        correct_sub = random.choice(QUIZ_SUBREDDITS)
+        # 1. Pick a correct category
+        correct_category = random.choice(list(QUIZ_CATEGORIES.keys()))
         
-        # Fetch a meme from this subreddit
-        url = f"https://meme-api.com/gimme/{correct_sub}/1"
+        # 2. Pick a subreddit from that category
+        subreddit = random.choice(QUIZ_CATEGORIES[correct_category])
+        
+        # 3. Fetch meme from this subreddit
+        url = f"https://meme-api.com/gimme/{subreddit}/1"
         response = requests.get(url, timeout=5)
         
         if response.status_code != 200:
@@ -400,15 +407,18 @@ def get_quiz_question():
         else:
              return jsonify({'error': 'Invalid API response'}), 500
 
-        # Prepare distractors
-        distractors = random.sample([s for s in QUIZ_SUBREDDITS if s != correct_sub], 3)
-        options = distractors + [correct_sub]
+        # 4. Prepare distractors (other categories)
+        all_categories = list(QUIZ_CATEGORIES.keys())
+        all_categories.remove(correct_category)
+        distractors = random.sample(all_categories, 3)
+        
+        options = distractors + [correct_category]
         random.shuffle(options)
         
         return jsonify({
             'meme_url': post.get('url'),
             'title': post.get('title'),
-            'correct_answer': correct_sub,
+            'correct_answer': correct_category,
             'options': options,
             'type': 'image' if post.get('url', '').endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) else 'video'
         })

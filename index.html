@@ -1258,14 +1258,14 @@
             }
 
             quizCard.innerHTML = `
-                <h3 style="margin-bottom:1rem;">Guess the Subreddit!</h3>
+                <h3 style="margin-bottom:1rem;">Guess the Category!</h3>
                 ${mediaHtml}
                 <p style="font-style:italic; color:#aaa; margin-bottom:1.5rem;">"${data.title}"</p>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
                     ${data.options.map(opt => `
                         <button class="quiz-option" onclick="checkAnswer(this, '${opt}', '${data.correct_answer}')">
-                            r/${opt}
+                            ${opt}
                         </button>
                     `).join('')}
                 </div>
