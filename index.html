@@ -555,6 +555,36 @@
             } catch (e) { console.error(e); }
         }
 
+        async function downloadMeme(url, title, isVideo) {
+            try {
+                // Fetch the file
+                const response = await fetch(url);
+                const blob = await response.blob();
+
+                // Create download link
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+
+                // Set filename
+                const extension = isVideo ? 'mp4' : (url.includes('.gif') ? 'gif' : 'jpg');
+                const filename = `${title.substring(0, 50).replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+                link.download = filename;
+
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Clean up
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (e) {
+                console.error('Download failed:', e);
+                // Fallback: open in new tab
+                window.open(url, '_blank');
+            }
+        }
+
         async function loadMemes() {
             const loading = document.getElementById('loading');
             const feedContainer = document.getElementById('feed-container');
@@ -642,6 +672,9 @@
                     <div class="meme-footer">
                         <span>👍 ${meme.ups}</span>
                         <span>${meme.source || 'Viral'}</span>
+                        <button onclick='downloadMeme("${meme.url || meme.video_url}", "${meme.title}", ${meme.is_video})' style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0.5rem 1rem; border-radius:20px; cursor:pointer; font-size:0.9rem; font-weight:600; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            📥 Download
+                        </button>
                     </div>
                 `;
 
