@@ -104,15 +104,19 @@ class Favorite(db.Model):
     saved_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class LoginHistory(db.Model):
+    __tablename__ = 'login_history'
+    
     id = db.Column(db.Integer, primary_key=True)
-    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
-    login_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    user_email = db.Column(
+        db.String(120), 
+        db.ForeignKey('user.email', ondelete='CASCADE'),
+        nullable=False,
+        index=True
+    )
+    login_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
     ip_address = db.Column(db.String(45))  # IPv6 can be up to 45 chars
     user_agent = db.Column(db.String(500))
     login_method = db.Column(db.String(50), default='google')  # 'google', 'facebook', etc.
-    
-    # Relationship to User
-    user = db.relationship('User', backref=db.backref('login_history', lazy=True))
 
 @login_manager.user_loader
 def load_user(user_email):
