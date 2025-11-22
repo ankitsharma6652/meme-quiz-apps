@@ -680,7 +680,10 @@
         }
 
         async function loadFavorites() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                alert('Please sign in to view favorites!');
+                return;
+            }
 
             document.getElementById('loading').style.display = 'block';
             document.getElementById('feed-container').innerHTML = '';
@@ -691,20 +694,45 @@
                 const res = await fetch('/api/favorites', {
                     credentials: 'include'
                 });
-                allMemes = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch favorites: ${res.status}`);
+                }
+
+                const favorites = await res.json();
+                console.log('Loaded favorites:', favorites);
+
+                // Transform favorites to meme format
+                allMemes = favorites.map(fav => ({
+                    id: fav.meme_id,
+                    meme_id: fav.meme_id,
+                    title: fav.meme_title || 'Favorite Meme',
+                    url: fav.meme_url,
+                    meme_url: fav.meme_url,
+                    is_video: fav.is_video || false,
+                    source: fav.source || 'Favorites',
+                    ups: 999,
+                    author: 'saved',
+                    permalink: fav.meme_url
+                }));
 
                 // Update userFavorites set with all loaded favorites
-                userFavorites = new Set(allMemes.map(m => m.meme_id || m.id));
+                userFavorites = new Set(allMemes.map(m => m.meme_id));
 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('close-btn').style.display = 'block';
 
                 if (allMemes.length === 0) {
-                    document.getElementById('feed-container').innerHTML = '<p style="text-align:center; padding:3rem;">You haven\'t saved any favorites yet!</p>';
+                    document.getElementById('feed-container').innerHTML = '<p style="text-align:center; padding:3rem; color:#aaa;">You haven\'t saved any favorites yet!<br><br>Click the heart (🤍) on any meme to save it.</p>';
                 } else {
+                    console.log('Rendering', allMemes.length, 'favorites');
                     renderMemes();
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('Error loading favorites:', e);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('feed-container').innerHTML = '<p style="text-align:center; padding:3rem; color:#ff6b6b;">Failed to load favorites. Please try again.</p>';
+            }
         }
 
         async function downloadMeme(url, title, isVideo) {
