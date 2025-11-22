@@ -1649,6 +1649,7 @@
             const closeBtn = document.getElementById('close-btn');
             closeBtn.style.display = 'block';
             closeBtn.querySelector('button').onclick = () => {
+                saveMemeState(); // Save before closing
                 localStorage.removeItem('mememaster_state');
                 location.reload();
             };
@@ -1656,6 +1657,16 @@
             // Fetch templates if empty
             if (document.getElementById('template-grid').children.length === 0) {
                 await fetchTemplates();
+            }
+
+            // Restore previous meme state if exists
+            const restored = restoreMemeState();
+            if (!restored) {
+                // If no saved state, setup auto-save for new session
+                setupAutoSave();
+            } else {
+                // State restored, also setup auto-save for future changes
+                setupAutoSave();
             }
         }
 
@@ -2503,6 +2514,9 @@
                         textControls.style.display = 'none';
                     }
                 }
+
+                // Save state after drawing
+                saveMemeState();
             };
         }
 
