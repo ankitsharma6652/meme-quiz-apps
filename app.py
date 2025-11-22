@@ -173,14 +173,22 @@ def logout_redirect():
     logout_user()
     session.clear()
     print(f"LOGOUT: Session cleared. User after logout: {current_user.is_authenticated if current_user else 'No user'}")
+    
     response = redirect('/')
+    
     # Prevent caching
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
-    # Also clear session cookie
-    response.set_cookie('session', '', expires=0)
-    print("LOGOUT: Redirect response created")
+    
+    # Clear ALL cookies
+    response.set_cookie('session', '', expires=0, path='/')
+    response.set_cookie('remember_token', '', expires=0, path='/')
+    
+    # Add a logout flag to prevent auto-login
+    response.set_cookie('just_logged_out', 'true', max_age=5, path='/')
+    
+    print("LOGOUT: Redirect response created with cleared cookies")
     return response
 
 
