@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # List of files to sync
     files_to_sync = [
         ('app.py', 'app.py'),
-        ('templates/index.html', 'templates/index.html'),
+        ('index.html', 'index.html'),
         ('requirements.txt', 'requirements.txt'),
         ('verify_deployment.py', 'verify_deployment.py')
     ]
