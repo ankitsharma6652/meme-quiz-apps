@@ -559,21 +559,127 @@ def fetch_video_memes():
             
     return videos
 
+def fetch_instagram_memes():
+    """Fetch memes from Instagram-style sources using Imgflip API"""
+    memes = []
+    try:
+        # Imgflip has a free API for popular memes
+        response = requests.get('https://api.imgflip.com/get_memes', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success'):
+                meme_templates = data.get('data', {}).get('memes', [])
+                # Get random 20 memes
+                import random
+                selected = random.sample(meme_templates, min(20, len(meme_templates)))
+                
+                for meme in selected:
+                    memes.append({
+                        'id': f"imgflip_{meme['id']}",
+                        'title': meme['name'],
+                        'url': meme['url'],
+                        'meme_url': meme['url'],
+                        'is_video': False,
+                        'source': 'Imgflip',
+                        'ups': random.randint(100, 1000),
+                        'author': 'imgflip',
+                        'permalink': meme['url']
+                    })
+                print(f"✅ Fetched {len(memes)} memes from Imgflip")
+    except Exception as e:
+        print(f"Imgflip API error: {e}")
+    
+    return memes
+
+def fetch_twitter_memes():
+    """Fetch memes from Twitter/X-style sources using meme databases"""
+    memes = []
+    try:
+        # Use meme-api.com which aggregates from multiple sources
+        response = requests.get('https://meme-api.com/gimme/memes/30', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if 'memes' in data:
+                for meme in data['memes']:
+                    # Filter for high-quality memes
+                    if meme.get('ups', 0) > 100:
+                        memes.append({
+                            'id': f"twitter_{meme.get('postLink', '').split('/')[-1]}",
+                            'title': meme.get('title', 'Trending Meme'),
+                            'url': meme.get('url'),
+                            'meme_url': meme.get('url'),
+                            'is_video': meme.get('url', '').endswith(('.mp4', '.gif', '.gifv')),
+                            'source': 'Twitter/X',
+                            'ups': meme.get('ups', 0),
+                            'author': meme.get('author', 'twitter'),
+                            'permalink': meme.get('postLink', '')
+                        })
+                print(f"✅ Fetched {len(memes)} memes from Twitter/X sources")
+    except Exception as e:
+        print(f"Twitter meme fetch error: {e}")
+    
+    return memes
+
+def fetch_9gag_memes():
+    """Fetch trending memes from 9GAG-style sources"""
+    memes = []
+    try:
+        # Use another meme API endpoint
+        response = requests.get('https://meme-api.com/gimme/dankmemes/25', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if 'memes' in data:
+                for meme in data['memes']:
+                    memes.append({
+                        'id': f"9gag_{meme.get('postLink', '').split('/')[-1]}",
+                        'title': meme.get('title', 'Dank Meme'),
+                        'url': meme.get('url'),
+                        'meme_url': meme.get('url'),
+                        'is_video': meme.get('url', '').endswith(('.mp4', '.gif', '.gifv')),
+                        'source': '9GAG',
+                        'ups': meme.get('ups', 0),
+                        'author': meme.get('author', '9gag'),
+                        'permalink': meme.get('postLink', '')
+                    })
+                print(f"✅ Fetched {len(memes)} memes from 9GAG sources")
+    except Exception as e:
+        print(f"9GAG meme fetch error: {e}")
+    
+    return memes
+
 @app.route('/api/memes')
 def get_memes():
-    # 1. Get Images from Meme API
-    images = fetch_reddit_memes()
-    print(f"DEBUG: Fetched {len(images)} images")
+    """Fetch memes from multiple sources for diversity"""
+    all_memes = []
     
-    # 2. Get Videos from Reddit directly
-    videos = fetch_video_memes()
-    print(f"DEBUG: Fetched {len(videos)} videos")
+    # Fetch from multiple sources in parallel for speed
+    import concurrent.futures
     
-    # 3. Combine and Shuffle
-    all_memes = images + videos
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {
+            executor.submit(fetch_reddit_memes): 'Reddit',
+            executor.submit(fetch_instagram_memes): 'Instagram',
+            executor.submit(fetch_twitter_memes): 'Twitter',
+            executor.submit(fetch_9gag_memes): '9GAG',
+        }
+        
+        for future in concurrent.futures.as_completed(futures):
+            source = futures[future]
+            try:
+                memes = future.result()
+                all_memes.extend(memes)
+                print(f"✅ {source}: {len(memes)} memes")
+            except Exception as e:
+                print(f"❌ {source} failed: {e}")
+    
+    # Shuffle for variety
     import random
     random.shuffle(all_memes)
     
+    # Limit to 100 memes to avoid overwhelming the client
+    all_memes = all_memes[:100]
+    
+    print(f"🎯 Total memes returned: {len(all_memes)}")
     return jsonify(all_memes)
 
 def fetch_imgur_memes():

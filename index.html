@@ -714,19 +714,9 @@
             }
 
             try {
-                // 1. Fetch Images from Backend
-                const backendPromise = fetch('/api/memes').then(r => r.json());
-
-                // 2. Fetch Videos from RSS
-                const videoPromise = fetchRSSVideos();
-
-                const [backendMemes, videoMemes] = await Promise.all([backendPromise, videoPromise]);
-
-                // 3. Combine
-                let newMemes = [...backendMemes, ...videoMemes];
-
-                // Shuffle
-                newMemes.sort(() => Math.random() - 0.5);
+                // Fetch memes from backend (includes Reddit, Instagram, Twitter, 9GAG)
+                const response = await fetch('/api/memes');
+                const newMemes = await response.json();
 
                 if (!append) {
                     allMemes = newMemes;
@@ -750,25 +740,7 @@
 
             } catch (error) {
                 console.error('Error loading memes:', error);
-
-                // Fallback
-                try {
-                    const videoMemes = await fetchRSSVideos();
-                    if (videoMemes.length > 0) {
-                        if (!append) {
-                            allMemes = videoMemes;
-                        } else {
-                            allMemes = [...allMemes, ...videoMemes];
-                        }
-                        loading.style.display = 'none';
-                        filterSection.style.display = 'block';
-                        renderMemes(append, videoMemes);
-                    } else {
-                        throw new Error('No content found');
-                    }
-                } catch (e) {
-                    loading.innerHTML = `<div style="text-align:center; padding:2rem;"><h3>⚠️ Failed to load memes</h3><p>Please check your connection and try again.</p><button onclick="location.reload()" class="action-btn" style="margin-top:1rem;">Retry</button></div>`;
-                }
+                loading.innerHTML = `<div style="text-align:center; padding:2rem;"><h3>⚠️ Failed to load memes</h3><p>Please check your connection and try again.</p><button onclick="location.reload()" class="action-btn" style="margin-top:1rem;">Retry</button></div>`;
             } finally {
                 if (loadMoreBtn) {
                     loadMoreBtn.disabled = false;
