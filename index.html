@@ -1945,6 +1945,18 @@
             }
         }
 
+        // Auto-save state on changes
+        function setupAutoSave() {
+            // Save on text input changes
+            ['top-text', 'bottom-text', 'top-text-y', 'bottom-text-y', 'text-color', 'outline-color', 'font-size'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', saveMemeState);
+                    el.addEventListener('change', saveMemeState);
+                }
+            });
+        }
+
         function toggleDeepFry() {
             isDeepFried = !isDeepFried;
             const btn = document.getElementById('deep-fry-btn');
