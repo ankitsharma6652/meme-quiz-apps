@@ -615,36 +615,69 @@
                 filterSection.style.display = 'none';
                 closeBtn.style.display = 'none';
             }
-            loadMoreBtn.style.display = 'none';
 
-            try {
-                const response = await fetch('/api/trending-memes');
-                const newMemes = await response.json();
+            if (loadMoreBtn) {
+                loadMoreBtn.innerHTML = '<span class="loading-spinner"></span> Loading...';
+                loadMoreBtn.disabled = true;
+                try {
+                    // 1. Fetch Images from Backend
+                    const backendPromise = fetch('/api/memes').then(r => r.json());
 
-                if (append) {
-                    allMemes = [...allMemes, ...newMemes];
-                } else {
-                    allMemes = newMemes;
-                }
+                    // 2. Fetch Videos from Client (Browser)
+                    const videoPromise = fetchRedditVideos();
 
-                loading.style.display = 'none';
-                filterSection.style.display = 'block';
-                closeBtn.style.display = 'block';
-                loadMoreBtn.style.display = 'block';
+                    const [backendMemes, videoMemes] = await Promise.all([backendPromise, videoPromise]);
 
-                if (allMemes.length === 0) {
-                    feedContainer.innerHTML = '<p style="text-align:center; padding:3rem; color:#aaa;">No memes found. Try again later!</p>';
-                } else {
+                    // 3. Combine
+                    let newMemes = [...backendMemes, ...videoMemes];
+
+                    // Shuffle
+                    newMemes.sort(() => Math.random() - 0.5);
+
+                    if (!append) {
+                        allMemes = newMemes;
+                    } else {
+                        allMemes = [...allMemes, ...newMemes];
+                    }
+
+                    loading.style.display = 'none';
+                    filterSection.style.display = 'block';
+
+                    if (loadMoreBtn) loadMoreBtn.style.display = 'block';
+                    if (closeBtn) closeBtn.style.display = 'block';
+
                     // Refresh favorites to ensure correct heart states
                     if (currentUser && !append) {
                         await fetchFavorites();
                     }
+
                     renderMemes();
+
+                } catch (error) {
+                    console.error('Error loading memes:', error);
+
+                    // If backend fails, at least show videos
+                    try {
+                        const videoMemes = await fetchRedditVideos();
+                        if (videoMemes.length > 0) {
+                            allMemes = videoMemes;
+                            loading.style.display = 'none';
+                            filterSection.style.display = 'block';
+                            renderMemes();
+                        } else {
+                            throw new Error('No content found');
+                        }
+                    } catch (e) {
+                        loading.style.display = 'none';
+                        feedContainer.innerHTML = '<p style="text-align:center; padding:3rem; color:#ff6b6b;">Failed to load memes. Please try again.</p>';
+                    }
+                } finally {
+                    isLoading = false;
+                    if (loadMoreBtn) {
+                        loadMoreBtn.innerHTML = '🔄 Load More Memes';
+                        loadMoreBtn.disabled = false;
+                    }
                 }
-            } catch (error) {
-                console.error('Error loading memes:', error);
-                loading.style.display = 'none';
-                feedContainer.innerHTML = '<p style="text-align:center; padding:3rem; color:#ff6b6b;">Failed to load memes. Please try again.</p>';
             }
         }
 
