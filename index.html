@@ -857,30 +857,19 @@
                     <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage unavailable%3C/text%3E%3C/svg%3E'">
                 `;
 
-                // Clean author name for display
-                const displayAuthor = meme.author ? meme.author.replace(/^\/?u\//, '') : 'unknown';
-
-                // Correctly structure the card content
+                // Simplified card structure without author info
                 card.innerHTML = `
-                    <div class="meme-header">
-                        <div class="meme-author">
-                            <div class="author-avatar">${displayAuthor[0].toUpperCase()}</div>
-                            <div class="author-info">
-                                <span class="author-name">u/${displayAuthor}</span>
-                                <span class="meme-source">${meme.source}</span>
-                            </div>
-                        </div>
-                        <div class="meme-actions">
-                            <button class="action-btn" onclick="shareMeme('${meme.url}')">↗️</button>
-                        </div>
+                    <div class="meme-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <div class="meme-title" style="font-size:1.2rem; font-weight:600; flex:1;">${meme.title}</div>
+                        <button class="action-btn" onclick="shareMeme('${meme.url}')" style="margin-left:1rem;">↗️</button>
                     </div>
-                    <div class="meme-title" style="font-size:1.2rem; font-weight:600; margin:0.5rem 0 1rem;">${meme.title}</div>
                     
                     ${mediaContent}
                     
                     <div class="meme-footer">
                         <div class="meme-stats">
                             <span>🔥 ${meme.ups} ups</span>
+                            <span style="opacity:0.6; margin-left:1rem;">${meme.source}</span>
                         </div>
                         <div class="meme-actions">
                             <button class="action-btn like-btn ${activeClass}" onclick='toggleFavorite(${JSON.stringify(meme).replace(/'/g, "&#39;")}, this)'>
