@@ -541,8 +541,8 @@
                 });
                 allMemes = await res.json();
 
-                // Convert favorite format to meme format if needed
-                // (Our backend returns compatible format)
+                // Update userFavorites set with all loaded favorites
+                userFavorites = new Set(allMemes.map(m => m.meme_id || m.id));
 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('close-btn').style.display = 'block';
@@ -669,9 +669,7 @@
                     <div class="meme-media">
                         ${mediaContent}
                     </div>
-                    <div class="meme-footer">
-                        <span>👍 ${meme.ups}</span>
-                        <span>${meme.source || 'Viral'}</span>
+                    <div class="meme-footer" style="justify-content:flex-end;">
                         <button onclick='downloadMeme("${meme.url || meme.video_url}", "${meme.title}", ${meme.is_video})' style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0.5rem 1rem; border-radius:20px; cursor:pointer; font-size:0.9rem; font-weight:600; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                             📥 Download
                         </button>
