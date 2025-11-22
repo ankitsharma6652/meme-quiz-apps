@@ -393,46 +393,55 @@ def proxy_audio():
         return jsonify({'error': str(e)}), 500
 
 def fetch_reddit_memes():
-    # Prioritize Indian subreddits - HEAVILY
-    indian_subreddits = [
-        'IndianDankMemes', 'IndiaMemes', 'SaimanSays', 'DesiMemes', 
-        'bakchodi', 'IndianMeyMeys', 'bollywoodmemes', 'HindiMemes',
-        'IndianHumor', 'DesiVideoMemes'
-    ]
-    global_subreddits = ['memes', 'dankmemes', 'wholesomememes']
+    # Use Meme API for reliable Indian content
+    # We combine multiple subreddits with '+'
+    indian_subs = "IndianDankMemes+IndiaMemes+SaimanSays+DesiMemes+bakchodi+IndianMeyMeys+bollywoodmemes+HindiMemes"
     
     memes = []
-    headers = {'User-Agent': 'MemeQuizApp/1.0'}
-    
     try:
-        # 1. Fetch from Indian Subreddits (High Priority)
-        for sub in indian_subreddits:
-            try:
-                # Fetch MORE (100) because many are videos/text which we skip
-                url = f'https://www.reddit.com/r/{sub}/hot.json?limit=100' 
-                response = requests.get(url, headers=headers, timeout=3)
-                if response.status_code == 200:
-                    data = response.json()
-                    posts = data.get('data', {}).get('children', [])
-                    process_reddit_posts(posts, memes, source=f'Reddit ({sub})')
-            except Exception as e:
-                print(f"Error fetching from {sub}: {e}")
-
-        # 2. Fetch from Global Subreddits (Low Priority - Filler)
-        for sub in global_subreddits:
-            try:
-                url = f'https://www.reddit.com/r/{sub}/hot.json?limit=10' # Fetch LESS
-                response = requests.get(url, headers=headers, timeout=3)
-                if response.status_code == 200:
-                    data = response.json()
-                    posts = data.get('data', {}).get('children', [])
-                    process_reddit_posts(posts, memes, source='Reddit')
-            except Exception:
-                pass
+        # Fetch 50 memes from these specific Indian subreddits
+        url = f"https://meme-api.com/gimme/{indian_subs}/50"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            posts = data.get('memes', [])
+            
+            for post in posts:
+                # The API already filters for images mostly, but let's be safe
+                if post.get('nsfw'): 
+                    continue
+                    
+                meme = {
+                    'id': f"reddit_{post.get('postLink').split('/')[-1]}", # Extract ID from URL
+                    'title': post.get('title'),
+                    'ups': post.get('ups'),
+                    'url': post.get('url'),
+                    'is_video': False, # API usually returns images/gifs
+                    'source': f"Reddit ({post.get('subreddit')})"
+                }
                 
+                # Double check it's an image
+                if meme['url'].endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+                    memes.append(meme)
+                    
     except Exception as e:
-        print(f"Reddit fetch error: {e}")
-    
+        print(f"Meme API error: {e}")
+        
+    # Fallback: If API fails, try searching Reddit for "India"
+    if not memes:
+        print("API failed, falling back to Reddit Search...")
+        try:
+            headers = {'User-Agent': 'MemeQuizApp/1.0'}
+            url = 'https://www.reddit.com/search.json?q=india+meme&sort=hot&limit=50'
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                posts = data.get('data', {}).get('children', [])
+                process_reddit_posts(posts, memes, source='Reddit Search')
+        except Exception as e:
+            print(f"Search fallback error: {e}")
+
     return memes
 
 def process_reddit_posts(posts, memes_list, source='Reddit'):
