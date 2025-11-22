@@ -439,6 +439,7 @@ def fetch_reddit_memes():
                 data = response.json()
                 posts = data.get('data', {}).get('children', [])
                 process_reddit_posts(posts, memes, source='Reddit Search')
+                
         except Exception as e:
             print(f"Search fallback error: {e}")
 
@@ -460,7 +461,7 @@ def process_reddit_posts(posts, memes_list, source='Reddit'):
             'source': source
         }
         
-        # TEMPORARILY SKIP ALL VIDEOS - only show images
+        # Skip videos in this helper (videos handled separately)
         if meme['is_video'] or p_data.get('is_video'):
             continue
         
@@ -474,6 +475,57 @@ def process_reddit_posts(posts, memes_list, source='Reddit'):
             continue
 
         memes_list.append(meme)
+
+def fetch_video_memes():
+    """Fetches video memes directly from Reddit JSON"""
+    video_subs = ['DesiVideoMemes', 'IndianDankMemes', 'bollywoodmemes']
+    videos = []
+    headers = {'User-Agent': 'MemeQuizApp/1.0'}
+    
+    for sub in video_subs:
+        try:
+            url = f'https://www.reddit.com/r/{sub}/hot.json?limit=25'
+            response = requests.get(url, headers=headers, timeout=3)
+            if response.status_code == 200:
+                data = response.json()
+                posts = data.get('data', {}).get('children', [])
+                
+                for post in posts:
+                    p = post.get('data', {})
+                    
+                    # Check if it's a video
+                    if p.get('is_video') and p.get('secure_media'):
+                        video_data = p.get('secure_media', {}).get('reddit_video', {})
+                        video_url = video_data.get('fallback_url')
+                        
+                        if video_url:
+                            videos.append({
+                                'id': f"reddit_vid_{p.get('id')}",
+                                'title': p.get('title'),
+                                'ups': p.get('ups'),
+                                'url': video_url, # This is the MP4 link
+                                'is_video': True,
+                                'source': f"Reddit ({sub})"
+                            })
+        except Exception as e:
+            print(f"Video fetch error {sub}: {e}")
+            
+    return videos
+
+@app.route('/api/memes')
+def get_memes():
+    # 1. Get Images from Meme API
+    images = fetch_reddit_memes()
+    
+    # 2. Get Videos from Reddit directly
+    videos = fetch_video_memes()
+    
+    # 3. Combine and Shuffle
+    all_memes = images + videos
+    import random
+    random.shuffle(all_memes)
+    
+    return jsonify(all_memes)
 
 def fetch_imgur_memes():
     memes = []
