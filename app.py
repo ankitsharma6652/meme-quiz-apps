@@ -84,16 +84,18 @@ google = oauth.register(
 
 # Database Models
 class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), primary_key=True)
     name = db.Column(db.String(120))
     picture = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
+    
+    def get_id(self):
+        return self.email
 
 class Favorite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
     meme_id = db.Column(db.String(200), nullable=False)
     meme_title = db.Column(db.String(500))
     meme_url = db.Column(db.String(1000))
@@ -102,8 +104,8 @@ class Favorite(db.Model):
     saved_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+def load_user(user_email):
+    return User.query.get(user_email)
 
 # Create tables
 with app.app_context():
@@ -158,7 +160,7 @@ def authorize_google():
         # Use Flask-Login for session management
         login_user(user, remember=True)
         session.permanent = True
-        session['user_id'] = user.id
+        session['user_email'] = user.email
         
         print(f"User {user.email} logged in successfully!")
         
@@ -175,9 +177,9 @@ def get_user_from_token():
         return current_user
     
     # Also check session directly
-    user_id = session.get('user_id')
-    if user_id:
-        return User.query.get(user_id)
+    user_email = session.get('user_email')
+    if user_email:
+        return User.query.get(user_email)
     
     return None
 
@@ -219,9 +221,8 @@ def get_current_user():
         return jsonify({
             'authenticated': True,
             'user': {
-                'id': current_user.id,
-                'name': current_user.name,
                 'email': current_user.email,
+                'name': current_user.name,
                 'picture': current_user.picture
             }
         })
@@ -236,7 +237,7 @@ def get_favorites():
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
         
-    favorites = Favorite.query.filter_by(user_id=user.id).order_by(Favorite.saved_at.desc()).all()
+    favorites = Favorite.query.filter_by(user_email=user.email).order_by(Favorite.saved_at.desc()).all()
     return jsonify([{
         'id': fav.id,
         'meme_id': fav.meme_id,
@@ -256,7 +257,7 @@ def add_favorite():
     data = request.json
     
     existing = Favorite.query.filter_by(
-        user_id=user.id,
+        user_email=user.email,
         meme_id=data.get('meme_id')
     ).first()
     
@@ -264,7 +265,7 @@ def add_favorite():
         return jsonify({'message': 'Already in favorites'}), 200
     
     favorite = Favorite(
-        user_id=user.id,
+        user_email=user.email,
         meme_id=data.get('meme_id'),
         meme_title=data.get('title'),
         meme_url=data.get('url'),
@@ -283,7 +284,7 @@ def remove_favorite(fav_id):
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
         
-    favorite = Favorite.query.filter_by(id=fav_id, user_id=user.id).first()
+    favorite = Favorite.query.filter_by(id=fav_id, user_email=user.email).first()
     
     if not favorite:
         return jsonify({'error': 'Favorite not found'}), 404
@@ -305,7 +306,7 @@ def remove_favorite_by_meme():
     if not meme_id:
         return jsonify({'error': 'meme_id required'}), 400
     
-    favorite = Favorite.query.filter_by(user_id=user.id, meme_id=meme_id).first()
+    favorite = Favorite.query.filter_by(user_email=user.email, meme_id=meme_id).first()
     
     if not favorite:
         return jsonify({'error': 'Favorite not found'}), 404

@@ -1,8 +1,9 @@
 import os
 import pymysql
+from urllib.parse import quote_plus
 
 print("="*60)
-print("🛠️  DATABASE INITIALIZATION")
+print("🧨 DATABASE RESET (DROP & RECREATE)")
 print("="*60)
 
 # Configuration
@@ -28,10 +29,20 @@ try:
     
     cursor = conn.cursor()
     
-    # Create User Table
-    print("\n1. Creating 'user' table...")
+    # 1. Drop Tables
+    print("\n1. Dropping existing tables...")
+    try:
+        cursor.execute("DROP TABLE IF EXISTS favorite")
+        print("   🗑️  Dropped 'favorite'")
+        cursor.execute("DROP TABLE IF EXISTS user")
+        print("   🗑️  Dropped 'user'")
+    except Exception as e:
+        print(f"   ⚠️  Error dropping tables: {e}")
+
+    # 2. Create User Table
+    print("\n2. Creating 'user' table (PK: email)...")
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user (
+        CREATE TABLE user (
             email VARCHAR(120) PRIMARY KEY,
             name VARCHAR(120),
             picture VARCHAR(500),
@@ -40,10 +51,10 @@ try:
     """)
     print("   ✅ Done")
     
-    # Create Favorite Table
-    print("\n2. Creating 'favorite' table...")
+    # 3. Create Favorite Table
+    print("\n3. Creating 'favorite' table (FK: user_email)...")
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS favorite (
+        CREATE TABLE favorite (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_email VARCHAR(120) NOT NULL,
             meme_id VARCHAR(200) NOT NULL,
@@ -62,7 +73,7 @@ try:
     conn.close()
     
     print("\n" + "="*60)
-    print("✅ DATABASE INITIALIZED SUCCESSFULLY!")
+    print("✅ DATABASE RESET COMPLETE!")
     print("="*60)
     
 except Exception as e:
