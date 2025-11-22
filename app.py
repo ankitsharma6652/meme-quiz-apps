@@ -171,7 +171,12 @@ def logout():
 def logout_redirect():
     logout_user()
     session.clear()
-    return redirect('/')
+    response = redirect('/')
+    # Prevent caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route('/api/current-user', methods=['GET'])
