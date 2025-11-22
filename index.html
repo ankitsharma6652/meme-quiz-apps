@@ -646,13 +646,23 @@
                                     </div>
                                 </div>
 
-                                <!-- Custom Upload -->
+                                <!-- Custom Template Upload -->
                                 <div style="border-top:1px solid #333; padding-top:1rem;">
-                                    <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
-                                        upload your own image:</label>
+                                    <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">📤
+                                        Upload Your Own Template</label>
                                     <input type="file" id="custom-image-upload" accept="image/*"
-                                        onchange="handleImageUpload(this)"
-                                        style="color:#aaa; font-size:0.9rem; width:100%;">
+                                        style="width:100%; padding:0.5rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; color:var(--text-color); cursor:pointer;">
+                                </div>
+
+                                <!-- Image Overlay Upload (NEW) -->
+                                <div style="border-top:1px solid #333; padding-top:1rem; margin-top:1rem;">
+                                    <label
+                                        style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">🖼️
+                                        Upload Image as Overlay</label>
+                                    <p style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">Add images on top of
+                                        your template (draggable & resizable)</p>
+                                    <input type="file" id="overlay-image-upload" accept="image/*"
+                                        style="width:100%; padding:0.5rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; color:var(--text-color); cursor:pointer;">
                                 </div>
 
                                 <!-- AI Generation -->
@@ -1677,42 +1687,71 @@
             img.src = meme.url;
         }
 
-        function handleImageUpload(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = new Image();
-                    img.onload = function () {
-                        // Set as current template
-                        currentTemplate = {
-                            url: e.target.result,
-                            width: img.width,
-                            height: img.height,
-                            isCustom: true
-                        };
+        // Handle custom template upload (replaces base template)
+        document.getElementById('custom-image-upload').addEventListener('change', handleTemplateUpload);
 
-                        // Reset selection in grid
-                        const grid = document.getElementById('template-grid');
-                        Array.from(grid.children).forEach(c => c.querySelector('img').style.borderColor = 'transparent');
+        // Handle overlay image upload (adds image on top of template)
+        document.getElementById('overlay-image-upload').addEventListener('change', handleOverlayUpload);
 
-                        // Update canvas dimensions
-                        // Limit max width for performance/display
-                        const maxWidth = 800;
-                        if (img.width > maxWidth) {
-                            const scale = maxWidth / img.width;
-                            memeCanvas.width = maxWidth;
-                            memeCanvas.height = img.height * scale;
-                        } else {
-                            memeCanvas.width = img.width;
-                            memeCanvas.height = img.height;
-                        }
+        function handleTemplateUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-                        drawMeme();
-                    }
-                    img.src = e.target.result;
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    // Set as base template
+                    currentTemplate = {
+                        url: event.target.result,
+                        name: file.name
+                    };
+
+                    // Adjust canvas size
+                    memeCanvas.width = Math.min(img.width, 800);
+                    memeCanvas.height = (img.height / img.width) * memeCanvas.width;
+
+                    // Initialize drawing layer
+                    drawingLayer.width = memeCanvas.width;
+                    drawingLayer.height = memeCanvas.height;
+
+                    drawMeme();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleOverlayUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    // Add as overlay image object (like stickers)
+                    const scale = 150 / img.width; // Default 150px width
+                    canvasObjects.push({
+                        type: 'image',
+                        content: event.target.result,
+                        x: memeCanvas.width / 2,
+                        y: memeCanvas.height / 2,
+                        width: 150,
+                        height: img.height * scale,
+                        imgObj: img
+                    });
+                    selectedObjectIndex = canvasObjects.length - 1;
+                    drawMeme();
+
+                    // Reset file input
+                    e.target.value = '';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         // Drawing Logic
