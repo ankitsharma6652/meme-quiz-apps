@@ -292,6 +292,38 @@
             border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        /* Quiz Styles */
+        .quiz-option {
+            background: #1a1a1f;
+            border: 1px solid #333;
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 1.1rem;
+            color: white;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .quiz-option:hover:not(:disabled) {
+            background: #333;
+            transform: translateY(-2px);
+        }
+
+        .quiz-option.correct {
+            background: rgba(40, 167, 69, 0.8) !important;
+            border-color: #28a745 !important;
+            color: white;
+        }
+
+        .quiz-option.wrong {
+            background: rgba(220, 53, 69, 0.8) !important;
+            border-color: #dc3545 !important;
+            color: white;
+        }
     </style>
 </head>
 
@@ -341,9 +373,13 @@
 
     <main style="max-width:1400px; margin:0 auto; padding:2rem;">
         <div style="text-align:center; margin-bottom:3rem;">
-            <button id="load-btn"
+            <button id="load-btn" onclick="loadMemes()"
                 style="background:linear-gradient(135deg, #ff00cc, #333399); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,0,204,0.3); transition:transform 0.3s, box-shadow 0.3s;">
                 🚀 Load Viral Feed
+            </button>
+            <button id="start-quiz-btn" onclick="startQuiz()"
+                style="background:linear-gradient(135deg, #00c6ff, #0072ff); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(0,198,255,0.3); transition:transform 0.3s; margin-left: 1rem;">
+                🧠 Take Quiz
             </button>
         </div>
 
@@ -391,6 +427,16 @@
         </div>
 
         <div id="feed-container"></div>
+
+        <div id="quiz-container" style="display:none; max-width:800px; margin:0 auto;">
+            <div id="quiz-score-display"
+                style="text-align:center; margin-bottom:1rem; font-size:1.5rem; font-weight:bold; color:#00c6ff;">
+                Score: <span id="current-score">0</span>
+            </div>
+            <div id="quiz-card" class="meme-card" style="text-align:center;">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
 
         <div id="load-more-btn" style="display:none; text-align:center; margin-top:3rem;">
             <button onclick="loadMemes(true)"
@@ -1145,13 +1191,130 @@
                 audio.muted = false;
                 audio.volume = 1;
                 icon.innerHTML = '🔊';
-            } else {
                 audio.muted = true;
                 icon.innerHTML = '🔇';
             }
+        }
+        // Quiz Logic
+        let quizScore = 0;
+        let isQuizActive = false;
+
+        async function startQuiz() {
+            isQuizActive = true;
+            quizScore = 0;
+            document.getElementById('current-score').innerText = '0';
+
+            // Hide feed elements
+            document.getElementById('feed-container').innerHTML = '';
+            document.getElementById('filter-section').style.display = 'none';
+            document.getElementById('load-btn').style.display = 'none';
+            document.getElementById('start-quiz-btn').style.display = 'none';
+            document.getElementById('load-more-btn').style.display = 'none';
+
+            // Show close button to exit
+            const closeBtn = document.getElementById('close-btn');
+            closeBtn.style.display = 'block';
+            closeBtn.querySelector('button').onclick = () => {
+                localStorage.removeItem('mememaster_state');
+                location.reload();
+            };
+
+            // Show quiz elements
+            document.getElementById('quiz-container').style.display = 'block';
+
+            // Load first question
+            loadQuizQuestion();
+        }
+
+        async function loadQuizQuestion() {
+            const quizCard = document.getElementById('quiz-card');
+            quizCard.innerHTML = '<div class="spinner" style="margin: 3rem auto;"></div><p>Loading question...</p>';
+
+            try {
+                const res = await fetch('/api/quiz/question');
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error);
+
+                renderQuizQuestion(data);
+            } catch (e) {
+                console.error(e);
+                quizCard.innerHTML = '<p style="color:red">Failed to load question. <button onclick="loadQuizQuestion()" class="action-btn">Try Again</button></p>';
+            }
+        }
+
+        function renderQuizQuestion(data) {
+            const quizCard = document.getElementById('quiz-card');
+
+            let mediaHtml = '';
+            if (data.type === 'video') {
+                mediaHtml = `
+                    <video controls autoplay loop muted style="width:100%; max-height:500px; border-radius:8px; margin-bottom:1rem;">
+                        <source src="${data.meme_url}" type="video/mp4">
+                    </video>
+                `;
+            } else {
+                mediaHtml = `<img src="${data.meme_url}" style="width:100%; max-height:500px; object-fit:contain; border-radius:8px; margin-bottom:1rem;">`;
+            }
+
+            quizCard.innerHTML = `
+                <h3 style="margin-bottom:1rem;">Guess the Subreddit!</h3>
+                ${mediaHtml}
+                <p style="font-style:italic; color:#aaa; margin-bottom:1.5rem;">"${data.title}"</p>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    ${data.options.map(opt => `
+                        <button class="quiz-option" onclick="checkAnswer(this, '${opt}', '${data.correct_answer}')">
+                            r/${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function checkAnswer(btn, selected, correct) {
+            const buttons = document.querySelectorAll('.quiz-option');
+            buttons.forEach(b => b.disabled = true);
+
+            if (selected === correct) {
+                btn.classList.add('correct');
+                quizScore++;
+                document.getElementById('current-score').innerText = quizScore;
+
+                // Simple confetti effect using colored squares
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+                for (let i = 0; i < 20; i++) {
+                    const el = document.createElement('div');
+                    el.style.position = 'fixed';
+                    el.style.left = (btn.getBoundingClientRect().left + btn.offsetWidth / 2) + 'px';
+                    el.style.top = (btn.getBoundingClientRect().top) + 'px';
+                    el.style.width = '10px';
+                    el.style.height = '10px';
+                    el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    el.style.transition = 'all 1s ease-out';
+                    document.body.appendChild(el);
+
+                    setTimeout(() => {
+                        el.style.transform = `translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) rotate(${Math.random() * 360}deg)`;
+                        el.style.opacity = '0';
+                    }, 10);
+
+                    setTimeout(() => el.remove(), 1000);
+                }
+
+            } else {
+                btn.classList.add('wrong');
+                // Highlight correct answer
+                buttons.forEach(b => {
+                    if (b.innerText.includes(correct)) b.classList.add('correct');
+                });
+            }
+
+            setTimeout(() => {
+                loadQuizQuestion();
+            }, 1500);
         }
     </script>
 </body>
 
 </html>
-```

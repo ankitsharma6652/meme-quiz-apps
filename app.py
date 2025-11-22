@@ -7,6 +7,7 @@ import requests
 import os
 import html
 import secrets
+import random
 from datetime import datetime
 
 # Load environment variables from .env file
@@ -367,6 +368,54 @@ def remove_favorite_by_meme():
     db.session.commit()
     
     return jsonify({'message': 'Removed from favorites'})
+
+# Quiz Subreddits
+QUIZ_SUBREDDITS = [
+    'IndianDankMemes', 'IndiaMemes', 'SaimanSays', 'DesiMemes', 
+    'bakchodi', 'IndianMeyMeys', 'bollywoodmemes', 'HindiMemes',
+    'memes', 'dankmemes', 'wholesomememes', 'me_irl', 'funny',
+    'ProgrammerHumor', 'gaming', 'aww'
+]
+
+@app.route('/api/quiz/question', methods=['GET'])
+def get_quiz_question():
+    try:
+        # Pick a random subreddit for the correct answer
+        correct_sub = random.choice(QUIZ_SUBREDDITS)
+        
+        # Fetch a meme from this subreddit
+        url = f"https://meme-api.com/gimme/{correct_sub}/1"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch question'}), 500
+            
+        data = response.json()
+        
+        # If API returns error or no memes
+        if 'memes' in data and len(data['memes']) > 0:
+            post = data['memes'][0]
+        elif 'url' in data: # Single meme response format
+            post = data
+        else:
+             return jsonify({'error': 'Invalid API response'}), 500
+
+        # Prepare distractors
+        distractors = random.sample([s for s in QUIZ_SUBREDDITS if s != correct_sub], 3)
+        options = distractors + [correct_sub]
+        random.shuffle(options)
+        
+        return jsonify({
+            'meme_url': post.get('url'),
+            'title': post.get('title'),
+            'correct_answer': correct_sub,
+            'options': options,
+            'type': 'image' if post.get('url', '').endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) else 'video'
+        })
+        
+    except Exception as e:
+        print(f"Quiz Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # Meme Routes
 @app.route('/api/trending-memes', methods=['GET'])
