@@ -387,32 +387,29 @@ def fetch_reddit_memes():
                     'is_video': p_data.get('is_video', False),
                     'source': 'Reddit'
                 }
-
-                # Handle Reddit videos (they have separate audio/video streams)
-                if meme['is_video'] and p_data.get('secure_media'):
-                    video_data = p_data.get('secure_media', {}).get('reddit_video', {})
-                    fallback_url = video_data.get('fallback_url')  # Most reliable
-                    
-                    if fallback_url:
-                        # Use fallback URL (video-only, but most reliable)
-                        meme['video_url'] = html.unescape(fallback_url)
-                        meme['url'] = meme['video_url']
-                    else:
-                        # Skip if no video URL available
-                        meme['is_video'] = False
                 
-                # Handle .gifv and .mp4 links
-                if not meme['is_video'] and meme['url'].endswith(('.mp4', '.gifv')):
-                     meme['is_video'] = True
-                     meme['video_url'] = meme['url'].replace('.gifv', '.mp4')
-
-                # Skip videos without proper URLs
-                if meme['is_video'] and not meme.get('video_url'):
+                # TEMPORARILY SKIP ALL VIDEOS - only show images
+                if meme['is_video'] or p_data.get('is_video'):
+                    continue
+                
+                # Handle Reddit videos (DISABLED FOR NOW)
+                # if meme['is_video'] and p_data.get('secure_media'):
+                #     video_data = p_data.get('secure_media', {}).get('reddit_video', {})
+                #     fallback_url = video_data.get('fallback_url')  # Most reliable
+                #     
+                #     if fallback_url:
+                #         meme['video_url'] = html.unescape(fallback_url)
+                #         meme['url'] = meme['video_url']
+                #     else:
+                #         meme['is_video'] = False
+                
+                # Skip .gifv and .mp4 links
+                if meme['url'].endswith(('.mp4', '.gifv', '.gif')):
                     continue
 
-                # Validate image URLs
-                valid_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4')
-                if not meme['is_video'] and not meme['url'].endswith(valid_extensions):
+                # Validate image URLs only
+                valid_extensions = ('.jpg', '.jpeg', '.png', '.webp')
+                if not meme['url'].endswith(valid_extensions):
                     continue
 
                 memes.append(meme)
@@ -446,8 +443,9 @@ def fetch_imgur_memes():
                     'source': 'Meme API'
                 }
                 
-                if meme['is_video']:
-                    meme['video_url'] = meme['url']
+                # TEMPORARILY SKIP VIDEOS - only show images
+                if meme['is_video'] or url.endswith(('.mp4', '.gif', '.gifv')):
+                    continue
                 
                 if meme['url']:
                     memes.append(meme)
