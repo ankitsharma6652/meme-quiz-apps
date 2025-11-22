@@ -459,6 +459,7 @@
                 hasLoadedFeed: allMemes.length > 0,
                 filters: currentFilters,
                 scrollPosition: window.scrollY,
+                viewingFavorites: document.getElementById('close-btn')?.style.display === 'block',
                 timestamp: Date.now()
             };
             localStorage.setItem('mememaster_state', JSON.stringify(state));
@@ -493,8 +494,24 @@
                     console.log('Filters restored:', currentFilters);
                 }
 
-                // Auto-load feed if it was previously loaded
-                if (state.hasLoadedFeed) {
+                // Auto-load favorites if user was viewing them
+                if (state.viewingFavorites) {
+                    console.log('Restoring favorites view...');
+                    loadFavorites().then(() => {
+                        console.log('Favorites loaded, restoring scroll position...');
+                        if (state.scrollPosition && state.scrollPosition > 0) {
+                            setTimeout(() => {
+                                window.scrollTo({
+                                    top: state.scrollPosition,
+                                    behavior: 'smooth'
+                                });
+                                console.log('Scroll restored to:', state.scrollPosition);
+                            }, 1000);
+                        }
+                    });
+                }
+                // Auto-load feed if it was previously loaded (and not viewing favorites)
+                else if (state.hasLoadedFeed) {
                     console.log('Auto-loading previous feed...');
                     const loadBtn = document.getElementById('load-btn');
                     if (loadBtn) loadBtn.style.display = 'none';
@@ -731,12 +748,20 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('close-btn').style.display = 'block';
 
+                // Hide "Load More" button when viewing favorites (all favorites are loaded at once)
+                const loadMoreBtn = document.getElementById('load-more-btn');
+                if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+
                 if (allMemes.length === 0) {
                     document.getElementById('feed-container').innerHTML = '<p style="text-align:center; padding:3rem; color:#aaa;">You haven\'t saved any favorites yet!<br><br>Click the heart (🤍) on any meme to save it.</p>';
                 } else {
                     console.log('Rendering', allMemes.length, 'favorites');
                     renderMemes();
                 }
+
+                // Save state to persist favorites view on refresh
+                saveAppState();
+
             } catch (e) {
                 console.error('Error loading favorites:', e);
                 document.getElementById('loading').style.display = 'none';
