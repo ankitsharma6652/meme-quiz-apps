@@ -482,11 +482,26 @@
             const isFav = userFavorites.has(meme.id);
 
             if (isFav) {
-                // Find fav ID (simplified for this demo, ideally we store mapping)
-                // For now, we'll just re-fetch or handle optimistically
-                // In a real app, we'd need the favorite ID to delete
-                alert("To remove favorites, please go to 'My Favorites' page");
+                // Remove from favorites
+                try {
+                    const res = await fetch('/api/favorites/by-meme', {
+                        method: 'DELETE',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            meme_id: meme.id
+                        })
+                    });
+                    if (res.ok) {
+                        userFavorites.delete(meme.id);
+                        btn.classList.remove('active');
+                        btn.innerHTML = '🤍';
+                    }
+                } catch (e) { console.error(e); }
             } else {
+                // Add to favorites
                 try {
                     const res = await fetch('/api/favorites', {
                         method: 'POST',

@@ -241,6 +241,28 @@ def remove_favorite(fav_id):
     
     return jsonify({'message': 'Removed from favorites'})
 
+@app.route('/api/favorites/by-meme', methods=['DELETE'])
+def remove_favorite_by_meme():
+    user = get_user_from_token()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    meme_id = data.get('meme_id')
+    
+    if not meme_id:
+        return jsonify({'error': 'meme_id required'}), 400
+    
+    favorite = Favorite.query.filter_by(user_id=user.id, meme_id=meme_id).first()
+    
+    if not favorite:
+        return jsonify({'error': 'Favorite not found'}), 404
+    
+    db.session.delete(favorite)
+    db.session.commit()
+    
+    return jsonify({'message': 'Removed from favorites'})
+
 # Meme Routes
 @app.route('/api/trending-memes', methods=['GET'])
 def get_trending_memes():
