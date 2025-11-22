@@ -18,13 +18,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0a0a0c;
+            /* Default Dark Theme Variables */
+            --bg-color: #0f0f13;
+            --card-bg: #1a1a20;
             --text-color: #ffffff;
+            --accent-color: #ff0055;
+            --secondary-color: #00d2ff;
+            --border-color: #333;
             --primary-gradient: linear-gradient(135deg, #ff00cc, #333399);
             --secondary-gradient: linear-gradient(135deg, #00d2ff, #3a7bd5);
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
             --font-main: 'Outfit', sans-serif;
+        }
+
+        /* Higher specificity for themes */
+        html[data-theme="light"] {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-color: #1a1a20;
+            --accent-color: #ff0055;
+            --secondary-color: #007bff;
+            --border-color: #ddd;
+            --glass-bg: rgba(0, 0, 0, 0.05);
+            --glass-border: rgba(0, 0, 0, 0.1);
+        }
+
+        html[data-theme="cyberpunk"] {
+            --bg-color: #000b1e;
+            --card-bg: #051a3d;
+            --text-color: #00ff9d;
+            --accent-color: #ff00ff;
+            --secondary-color: #00eaff;
+            --border-color: #00ff9d;
+            --glass-bg: rgba(0, 255, 157, 0.1);
+            --glass-border: rgba(0, 255, 157, 0.2);
         }
 
         * {
@@ -39,6 +67,7 @@
             color: var(--text-color);
             overflow-x: hidden;
             min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .background-glow {
