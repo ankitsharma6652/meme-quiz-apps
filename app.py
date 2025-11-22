@@ -23,12 +23,14 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-
 # Database Configuration - Use MySQL on PythonAnywhere, SQLite locally
 if os.environ.get('PYTHONANYWHERE_DOMAIN'):
     # Production: MySQL on PythonAnywhere
+    from urllib.parse import quote_plus
     MYSQL_USER = os.environ.get('MYSQL_USER', 'ankitsharma6652')
     MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
     MYSQL_HOST = os.environ.get('MYSQL_HOST', 'ankitsharma6652.mysql.pythonanywhere-services.com')
     MYSQL_DB = os.environ.get('MYSQL_DB', 'ankitsharma6652$mememaster')
     
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}'
+    encoded_password = quote_plus(MYSQL_PASSWORD)
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{MYSQL_USER}:{encoded_password}@{MYSQL_HOST}/{MYSQL_DB}'
     print(f"Using MySQL database: {MYSQL_DB}")
 else:
     # Local: SQLite
