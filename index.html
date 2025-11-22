@@ -468,6 +468,35 @@
                             <input type="text" id="bottom-text" placeholder="BOTTOM TEXT" oninput="drawMeme()"
                                 style="background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
 
+                            <!-- Styling Controls -->
+                            <div
+                                style="display:flex; gap:1rem; align-items:center; background:#2a2a2f; padding:0.5rem; border-radius:8px;">
+                                <div style="display:flex; flex-direction:column; align-items:center;">
+                                    <label style="font-size:0.7rem; color:#aaa;">Text</label>
+                                    <input type="color" id="text-color" value="#ffffff" oninput="drawMeme()"
+                                        style="border:none; background:none; cursor:pointer; width:30px; height:30px;">
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:center;">
+                                    <label style="font-size:0.7rem; color:#aaa;">Outline</label>
+                                    <input type="color" id="outline-color" value="#000000" oninput="drawMeme()"
+                                        style="border:none; background:none; cursor:pointer; width:30px; height:30px;">
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column;">
+                                    <label style="font-size:0.7rem; color:#aaa;">Font Size</label>
+                                    <input type="range" id="font-size" min="20" max="100" value="40"
+                                        oninput="drawMeme()" style="width:100%; cursor:pointer;">
+                                </div>
+                            </div>
+
+                            <!-- Custom Upload -->
+                            <div style="border-top:1px solid #333; padding-top:1rem;">
+                                <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
+                                    upload your own image:</label>
+                                <input type="file" id="custom-image-upload" accept="image/*"
+                                    onchange="handleImageUpload(this)"
+                                    style="color:#aaa; font-size:0.9rem; width:100%;">
+                            </div>
+
                             <button onclick="downloadCreatedMeme()"
                                 style="background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600; margin-top:0.5rem;">
                                 💾 Download Meme
@@ -1088,9 +1117,9 @@
                 const mediaContent = meme.is_video ? (
                     isRedditVideo ? `
                         <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden;" class="custom-player" id="${uniqueId}">
-                            <video 
+                            <video
                                 id="${uniqueId}-video"
-                                playsinline 
+                                playsinline
                                 loop
                                 poster="${meme.url}"
                                 referrerpolicy="no-referrer"
@@ -1104,7 +1133,7 @@
                                 <source src="https://v.redd.it/${meme.id}/DASH_360.mp4" type="video/mp4">
                                 <source src="https://v.redd.it/${meme.id}/DASH_240.mp4" type="video/mp4">
                             </video>
-                            
+
                             <audio id="${uniqueId}-audio" loop style="display:none;" onerror="console.log('Audio missing for ${meme.id}')">
                                 <source src="${audioSrc}" type="audio/mp4">
                             </audio>
@@ -1120,9 +1149,9 @@
                             </button>
                         </div>
                     ` : `
-                        <video 
-                            controls 
-                            playsinline 
+                        <video
+                            controls
+                            playsinline
                             loop
                             preload="metadata"
                             style="width:100%; max-height:600px; object-fit:contain; border-radius:8px; background:#000;"
@@ -1133,7 +1162,7 @@
                         </video>
                     `
                 ) : `
-                    <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 font-size=%2214%22 x=%2250%25%22 y=%2245%25%22 text-anchor=%22middle%22%3E📷%3C/text%3E%3Ctext fill=%22%23999%22 font-size=%2212%22 x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22%3EImage expired%3C/text%3E%3Ctext fill=%22%23666%22 font-size=%2210%22 x=%2250%25%22 y=%2265%25%22 text-anchor=%22middle%22%3E(Meme URLs expire after some time)%3C/text%3E%3C/svg%3E'">
+                    <img src="${meme.url || meme.meme_url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 font-size=%2214%22 x=%2250%25%22 y=%2245%25%22 text-anchor=%22middle%22%3E📷%3C/text%3E%3Ctext fill=%22%23999%22 font-size=%2212%22 x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22%3EImage expired%3C/text%3E%3Ctext fill=%22%23666%22 font-size=%2210%22 x=%2250%25%22 y=%2265%25%22 text-anchor=%22middle%22%3E(Meme URLs expire after some time)%3C/text%3E%3Csvg%3E'">
                 `;
 
                 // Simplified card structure without author info
@@ -1142,9 +1171,9 @@
                         <div class="meme-title" style="font-size:1.2rem; font-weight:600; flex:1;">${meme.title}</div>
                         <button class="action-btn" onclick="shareMeme('${meme.url}')" style="margin-left:1rem;">↗️</button>
                     </div>
-                    
+
                     ${mediaContent}
-                    
+
                     <div class="meme-footer">
                         <div class="meme-stats">
                             <span>🔥 ${meme.ups} ups</span>
@@ -1328,7 +1357,7 @@
                 <h3 style="margin-bottom:1rem;">Guess the Category!</h3>
                 ${mediaHtml}
                 <p style="font-style:italic; color:#aaa; margin-bottom:1.5rem;">"${data.title}"</p>
-                
+
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
                     ${data.options.map(opt => `
                         <button class="quiz-option" onclick="checkAnswer(this, '${opt}', '${data.correct_answer}')">
@@ -1453,11 +1482,49 @@
             const img = new Image();
             img.crossOrigin = "Anonymous";
             img.onload = () => {
-                memeCanvas.width = meme.width;
-                memeCanvas.height = meme.height;
+                memeCanvas.width = img.width;
+                memeCanvas.height = img.height;
                 drawMeme();
             };
             img.src = meme.url;
+        }
+
+        function handleImageUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        // Set as current template
+                        currentTemplate = {
+                            url: e.target.result,
+                            width: img.width,
+                            height: img.height,
+                            isCustom: true
+                        };
+
+                        // Reset selection in grid
+                        const grid = document.getElementById('template-grid');
+                        Array.from(grid.children).forEach(c => c.querySelector('img').style.borderColor = 'transparent');
+
+                        // Update canvas dimensions
+                        // Limit max width for performance/display
+                        const maxWidth = 800;
+                        if (img.width > maxWidth) {
+                            const scale = maxWidth / img.width;
+                            memeCanvas.width = maxWidth;
+                            memeCanvas.height = img.height * scale;
+                        } else {
+                            memeCanvas.width = img.width;
+                            memeCanvas.height = img.height;
+                        }
+
+                        drawMeme();
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         function drawMeme() {
@@ -1468,31 +1535,41 @@
             img.src = currentTemplate.url;
 
             img.onload = () => {
-                ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0, memeCanvas.width, memeCanvas.height);
 
                 const topText = document.getElementById('top-text').value.toUpperCase();
                 const bottomText = document.getElementById('bottom-text').value.toUpperCase();
+                const textColor = document.getElementById('text-color').value;
+                const outlineColor = document.getElementById('outline-color').value;
+                const fontSizeVal = document.getElementById('font-size').value;
 
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = 'black';
+                ctx.fillStyle = textColor;
+                ctx.strokeStyle = outlineColor;
                 ctx.lineWidth = Math.max(2, memeCanvas.width / 200); // Dynamic stroke width
                 ctx.textAlign = 'center';
 
-                const fontSize = Math.floor(memeCanvas.width / 10);
+                // Calculate font size relative to canvas width but scaled by slider
+                // Base size is width/10. Slider acts as multiplier (20-100 => 0.5x to 2.5x roughly)
+                // Let's just use the slider value as a base percentage of width
+                const fontSize = Math.floor(memeCanvas.width * (fontSizeVal / 400));
                 ctx.font = `bold ${fontSize}px Impact, sans-serif`;
 
                 // Draw Top Text
                 if (topText) {
                     ctx.textBaseline = 'top';
-                    ctx.fillText(topText, memeCanvas.width / 2, 20);
-                    ctx.strokeText(topText, memeCanvas.width / 2, 20);
+                    const x = memeCanvas.width / 2;
+                    const y = fontSize * 0.2; // Padding
+                    ctx.fillText(topText, x, y);
+                    ctx.strokeText(topText, x, y);
                 }
 
                 // Draw Bottom Text
                 if (bottomText) {
                     ctx.textBaseline = 'bottom';
-                    ctx.fillText(bottomText, memeCanvas.width / 2, memeCanvas.height - 20);
-                    ctx.strokeText(bottomText, memeCanvas.width / 2, memeCanvas.height - 20);
+                    const x = memeCanvas.width / 2;
+                    const y = memeCanvas.height - (fontSize * 0.2);
+                    ctx.fillText(bottomText, x, y);
+                    ctx.strokeText(bottomText, x, y);
                 }
             };
         }
