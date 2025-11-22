@@ -703,17 +703,18 @@
                 console.log('Loaded favorites:', favorites);
 
                 // Transform favorites to meme format
+                // API returns: {id, meme_id, title, url, is_video, source, saved_at}
                 allMemes = favorites.map(fav => ({
                     id: fav.meme_id,
                     meme_id: fav.meme_id,
-                    title: fav.meme_title || 'Favorite Meme',
-                    url: fav.meme_url,
-                    meme_url: fav.meme_url,
+                    title: fav.title || 'Favorite Meme',
+                    url: fav.url,
+                    meme_url: fav.url,
                     is_video: fav.is_video || false,
                     source: fav.source || 'Favorites',
                     ups: 999,
                     author: 'saved',
-                    permalink: fav.meme_url
+                    permalink: fav.url
                 }));
 
                 // Log each transformed meme for debugging
