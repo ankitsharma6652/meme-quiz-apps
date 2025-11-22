@@ -356,6 +356,13 @@
                 </a>
             </div>
             <div id="user-logged-in" style="display:none; gap:1rem; align-items:center;">
+                <!-- Theme Switcher -->
+                <select id="theme-selector" onchange="setTheme(this.value)"
+                    style="background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); padding:0.5rem; border-radius:8px; cursor:pointer;">
+                    <option value="dark">🌙 Dark</option>
+                    <option value="light">☀️ Light</option>
+                    <option value="cyberpunk">🤖 Cyberpunk</option>
+                </select>
                 <img id="user-avatar" src="" alt="Profile"
                     style="width:32px; height:32px; border-radius:50%; border:2px solid #00d2ff;">
                 <span id="username-display" style="color:#00d2ff; font-weight:600;"></span>
@@ -400,20 +407,7 @@
                 </div>
 
                 <div style="display:flex; gap:1rem; align-items:center;">
-                    <select onchange="setTheme(this.value)"
-                        style="background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); padding:0.5rem; border-radius:8px; cursor:pointer;">
-                        <option value="dark">🌙 Dark</option>
-                        <option value="light">☀️ Light</option>
-                        <option value="cyberpunk">🤖 Cyberpunk</option>
-                    </select>
 
-                    <button id="favorites-btn" class="nav-btn"
-                        style="background:transparent; border:1px solid var(--border-color);">
-                        ❤️ Favorites
-                    </button>
-                    <div id="user-info" style="display:flex; align-items:center; gap:0.5rem;">
-                        <!-- User info will be populated here -->
-                    </div>
                 </div>
             </div>
             <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; justify-content:center;">
@@ -992,6 +986,14 @@
             document.getElementById('start-quiz-btn').style.display = 'inline-block';
             document.getElementById('create-btn').style.display = 'inline-block';
 
+            // Show close button to exit
+            const closeBtn = document.getElementById('close-btn');
+            closeBtn.style.display = 'block';
+            closeBtn.querySelector('button').onclick = () => {
+                localStorage.removeItem('mememaster_state');
+                location.reload();
+            };
+
             try {
                 const res = await fetch('/api/favorites', {
                     credentials: 'include'
@@ -1438,6 +1440,7 @@
                 audio.muted = false;
                 audio.volume = 1;
                 icon.innerHTML = '🔊';
+            } else {
                 audio.muted = true;
                 icon.innerHTML = '🔇';
             }
@@ -2122,14 +2125,25 @@
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
+
+            // Update selector value if it exists
+            const themeSelect = document.getElementById('theme-selector');
+            if (themeSelect) themeSelect.value = theme;
         }
 
-        // Load saved theme
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        // Update selector if exists
-        const themeSelect = document.querySelector('select[onchange="setTheme(this.value)"]');
-        if (themeSelect) themeSelect.value = savedTheme;
+        // Load saved theme immediately
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            // We can't set the select value here because DOM might not be ready, 
+            // but we'll do it in DOMContentLoaded as well.
+        })();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const themeSelect = document.getElementById('theme-selector');
+            if (themeSelect) themeSelect.value = savedTheme;
+        });
 
         function downloadCreatedMeme() {
             const link = document.createElement('a');
