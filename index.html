@@ -389,6 +389,33 @@
         </div>
 
         <div id="filter-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <h1
+                        style="font-size:2.5rem; font-weight:800; background: linear-gradient(to right, var(--accent-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin:0;">
+                        MemeMaster
+                    </h1>
+                    <span
+                        style="background:var(--accent-color); padding:0.2rem 0.6rem; border-radius:12px; font-size:0.8rem; font-weight:bold; color:white;">v2.0</span>
+                </div>
+
+                <div style="display:flex; gap:1rem; align-items:center;">
+                    <select onchange="setTheme(this.value)"
+                        style="background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); padding:0.5rem; border-radius:8px; cursor:pointer;">
+                        <option value="dark">🌙 Dark</option>
+                        <option value="light">☀️ Light</option>
+                        <option value="cyberpunk">🤖 Cyberpunk</option>
+                    </select>
+
+                    <button id="favorites-btn" class="nav-btn"
+                        style="background:transparent; border:1px solid var(--border-color);">
+                        ❤️ Favorites
+                    </button>
+                    <div id="user-info" style="display:flex; align-items:center; gap:0.5rem;">
+                        <!-- User info will be populated here -->
+                    </div>
+                </div>
+            </div>
             <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; justify-content:center;">
                 <div style="display:flex; gap:0.5rem; align-items:center;">
                     <label style="color:#aaa; font-size:0.9rem;">Show:</label>
@@ -560,89 +587,93 @@
                                     </div>
                                     <!-- Slack Stickers -->
                                     <div style="margin-top:1rem;">
-                                        <label
-                                            style="font-size:0.9rem; color:#aaa; font-weight:bold; display:block; margin-bottom:0.5rem;">🚀
-                                            Slack Stickers (Fixed)</label>
-                                        <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.5rem;">
-                                            <!-- Party Parrot (Base64) -->
-                                            <img src="data:image/gif;base64,R0lGODlhIAAgAPQAAP///wAAAPj4+Dg4OISEhAYGBiYmJtbW1qioqBYWFvb29ufn5/7+/h4eHrq6un5+ft7e3sLCwbGxsZmVlYyMjEBAQJyanMzMzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwAAAAAh/h1HaWZCdWlsZGVyIDAuMiBieSBYvesgUGlnZ3VldAAh+QQECgAAACwAAAAAIAAgAAAFwSAgjmRpnqmqrmzrvnAsz3Rt33iu73zv/8CgcEgsGo/IpHLJbDqf0Kh0Sq1ar9isdsvter/gsHhMLpvP6LR6zW673/C4fE6v2+/4vH7P7/v/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AIQUEBAA7"
-                                                onclick="addCustomImage(this.src)"
-                                                style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
-                                                title="Party Parrot">
-
-                                            <!-- Doge (Base64 Placeholder - using a simple icon for reliability) -->
-                                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABCFBMVEUAAAD///8zMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkzMzOZmZkAAABW1Z8UAAAAUHRSTlMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB041TAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+kMFw0sL0r01Y0AAABoSURBVDjLY2AYBfQEjIyMTAwMTEzMjAxMzCwMLKxsDKxs7Aws7BwMnFzcDJxc3Ayc3DwMPLw8DLy8vAy8fHwMfHx8DHx8/Ax8AgIMAgKCDAICQgwCAkIMQkIiDEJCogxCQqIMQkJiYAAAKCQE/1l+4EIAAAAASUVORK5CYII="
-                                                onclick="addCustomImage(this.src)"
-                                                style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
-                                                title="Doge">
-
-                                            <!-- Cool Sunglasses (Base64) -->
-                                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAhFBMVEUAAAAAAAD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANvWkEAAAAK3RSTlMAAA0IFB4oMDQ8QkhQVFhcYGhweH6EiIqSlJicpKassbe5wMPEyM7X2d7n7/9Y4rMAAAABYktHRACIBR1IAAAAB3RJTUUH6QwXDSw1z0/gWAAAAGRJREFUOMu10zsKACEMRNE0/61t73/FQlDMRsEymIVP5jEIo5RSc849p1M+C0zL9B2g1/4F6C1/A7r1r4B2/R2gW38F6NbfAbr1V4Bu/R2gW38F6NbfAbr1V4Bu/R2gW38F6NZfAboNf4Uj6dZ7AAAAAElFTkSuQmCC"
-                                                onclick="addCustomImage(this.src)"
-                                                style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
-                                                title="Cool">
-
-                                            <!-- Fire (Base64) -->
-                                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABiVBMVEUAAAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD///8FqC36AAAAfHRSTlMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB041TAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAJZJREFUOMu10zsOwyAMRNE5f+9/aW0XyRa28hWCDA0j8RhmMMrM3DqXnE/5LDCt03eAXvsXoLf8DejWvwLa9XeAbv0VoFt/B+jWXwG69XeAbv0VoFt/B+jWXwG69XeAbv0VoFt/B+jWXwG69XeAbv0VoFt/B+jWXwG69XeAbv0VoFt/B+jWXwG69XeAbv0VoFt/B+jWXwG6Db8F4yPp1lQAAAAASUVORK5CYII="
-                                                onclick="addCustomImage(this.src)"
-                                                style="width:40px; height:40px; cursor:pointer; border-radius:4px; background:#333; padding:2px;"
-                                                title="Fire">
+                                        <!-- Slack Stickers (Unicode Version) -->
+                                        <div style="margin-top:1rem;">
+                                            <label
+                                                style="font-size:0.9rem; color:#aaa; font-weight:bold; display:block; margin-bottom:0.5rem;">🚀
+                                                Slack Stickers</label>
+                                            <div
+                                                style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.5rem;">
+                                                <button onclick="addSticker('🦜')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Parrot">🦜</button>
+                                                <button onclick="addSticker('🐕')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Doge">🐕</button>
+                                                <button onclick="addSticker('🐸')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Pepe">🐸</button>
+                                                <button onclick="addSticker('😎')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Cool">😎</button>
+                                                <button onclick="addSticker('🔥')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Fire">🔥</button>
+                                                <button onclick="addSticker('🤡')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Clown">🤡</button>
+                                                <button onclick="addSticker('💎')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Diamond Hands">💎</button>
+                                                <button onclick="addSticker('🚀')"
+                                                    style="font-size:2rem; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; cursor:pointer; padding:0.2rem;"
+                                                    title="Rocket">🚀</button>
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- Custom Upload -->
-                                    <div style="border-top:1px solid #333; padding-top:1rem;">
-                                        <label
-                                            style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
-                                            upload your own image:</label>
-                                        <input type="file" id="custom-image-upload" accept="image/*"
-                                            onchange="handleImageUpload(this)"
-                                            style="color:#aaa; font-size:0.9rem; width:100%;">
-                                    </div>
+                                <!-- Custom Upload -->
+                                <div style="border-top:1px solid #333; padding-top:1rem;">
+                                    <label style="display:block; margin-bottom:0.5rem; color:#aaa; font-size:0.9rem;">Or
+                                        upload your own image:</label>
+                                    <input type="file" id="custom-image-upload" accept="image/*"
+                                        onchange="handleImageUpload(this)"
+                                        style="color:#aaa; font-size:0.9rem; width:100%;">
+                                </div>
 
-                                    <!-- AI Generation -->
-                                    <div style="border-top:1px solid #333; padding-top:1rem; margin-top:1rem;">
-                                        <label
-                                            style="display:block; margin-bottom:0.5rem; color:#00d2ff; font-size:0.9rem; font-weight:bold;">✨
-                                            AI Image Generator (Free Unlimited)</label>
-                                        <div style="display:flex; gap:0.5rem;">
-                                            <input type="text" id="ai-prompt"
-                                                placeholder="e.g. Cyberpunk cat eating pizza"
-                                                style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px;">
-                                            <button onclick="generateAIImage()"
-                                                style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
-                                                Generate
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div style="display:flex; gap:1rem; margin-top:1rem;">
-                                        <button onclick="downloadCreatedMeme()"
-                                            style="flex:1; background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                                            💾 Download
-                                        </button>
-                                        <button onclick="shareCreatedMeme()"
-                                            style="flex:1; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
-                                            📤 Share
+                                <!-- AI Generation -->
+                                <div style="border-top:1px solid #333; padding-top:1rem; margin-top:1rem;">
+                                    <label
+                                        style="display:block; margin-bottom:0.5rem; color:#00d2ff; font-size:0.9rem; font-weight:bold;">✨
+                                        AI Image Generator (Free Unlimited)</label>
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <input type="text" id="ai-prompt" placeholder="e.g. Cyberpunk cat eating pizza"
+                                            style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px;">
+                                        <button onclick="generateAIImage()"
+                                            style="background:linear-gradient(135deg, #00d2ff, #3a7bd5); color:white; border:none; padding:0 1rem; border-radius:8px; cursor:pointer; font-weight:bold;">
+                                            Generate
                                         </button>
                                     </div>
+                                </div>
+
+                                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                                    <button onclick="downloadCreatedMeme()"
+                                        style="flex:1; background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
+                                        💾 Download
+                                    </button>
+                                    <button onclick="shareCreatedMeme()"
+                                        style="flex:1; background:linear-gradient(135deg, #11998e, #38ef7d); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">
+                                        📤 Share
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div id="load-more-btn" style="display:none; text-align:center; margin-top:3rem;">
-                    <button onclick="loadMemes(true)"
-                        style="background:linear-gradient(135deg, #ff00cc, #333399); color:white; border:none; padding:1rem 3rem; font-size:1.1rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,0,204,0.3); transition:transform 0.3s;">
-                        🔄 Load More Memes
-                    </button>
-                </div>
+            <div id="load-more-btn" style="display:none; text-align:center; margin-top:3rem;">
+                <button onclick="loadMemes(true)"
+                    style="background:linear-gradient(135deg, #ff00cc, #333399); color:white; border:none; padding:1rem 3rem; font-size:1.1rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,0,204,0.3); transition:transform 0.3s;">
+                    🔄 Load More Memes
+                </button>
+            </div>
 
-                <div id="close-btn" style="display:none; text-align:center; margin-top:3rem;">
-                    <button onclick="localStorage.removeItem('mememaster_state'); location.reload();"
-                        class="auth-btn btn-secondary">Close Feed</button>
-                </div>
+            <div id="close-btn" style="display:none; text-align:center; margin-top:3rem;">
+                <button onclick="localStorage.removeItem('mememaster_state'); location.reload();"
+                    class="auth-btn btn-secondary">Close Feed</button>
+            </div>
     </main>
 
     <script>
@@ -2075,16 +2106,30 @@
 
                 // Show/Hide Text Controls
                 const textControls = document.getElementById('text-controls');
-                if (selectedObjectIndex !== -1) {
-                    textControls.style.display = 'flex';
-                    // Update label based on type
-                    const label = textControls.querySelector('span');
-                    if (label) label.innerText = canvasObjects[selectedObjectIndex].type === 'text' ? 'Text Selected' : 'Sticker Selected';
-                } else {
-                    textControls.style.display = 'none';
+                if (textControls) {
+                    if (selectedObjectIndex !== -1) {
+                        textControls.style.display = 'flex';
+                        // Update label based on type
+                        const label = textControls.querySelector('span');
+                        if (label) label.innerText = canvasObjects[selectedObjectIndex].type === 'text' ? 'Text Selected' : 'Sticker Selected';
+                    } else {
+                        textControls.style.display = 'none';
+                    }
                 }
             };
         }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        // Update selector if exists
+        const themeSelect = document.querySelector('select[onchange="setTheme(this.value)"]');
+        if (themeSelect) themeSelect.value = savedTheme;
 
         function downloadCreatedMeme() {
             const link = document.createElement('a');
