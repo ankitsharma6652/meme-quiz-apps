@@ -748,7 +748,6 @@
             setupEventListeners();
             await checkAuth();
             restoreAppState(); // Restore previous state on page load
-            setupAutoSave(); // Setup auto-save for generator inputs
         });
 
         function setupEventListeners() {
@@ -797,7 +796,12 @@
                 hasLoadedFeed: allMemes.length > 0,
                 filters: currentFilters,
                 scrollPosition: window.scrollY,
-                viewingFavorites: document.getElementById('close-btn')?.style.display === 'block',
+                // Only set viewingFavorites if feed container has content AND close button is visible
+                // (not generator or quiz)
+                viewingFavorites: document.getElementById('close-btn')?.style.display === 'block' &&
+                    document.getElementById('feed-container')?.children.length > 0 &&
+                    document.getElementById('generator-container')?.style.display !== 'block' &&
+                    document.getElementById('quiz-container')?.style.display !== 'block',
                 timestamp: Date.now()
             };
             localStorage.setItem('mememaster_state', JSON.stringify(state));
