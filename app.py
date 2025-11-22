@@ -167,7 +167,7 @@ def logout():
     session.clear()
     return jsonify({'message': 'Logged out successfully'})
 
-@app.route('/api/logout-redirect', methods=['GET'])
+@app.route('/api/logout-redirect', methods=['GET', 'POST'])
 def logout_redirect():
     logout_user()
     session.clear()

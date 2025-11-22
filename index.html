@@ -310,8 +310,9 @@
                     style="width:32px; height:32px; border-radius:50%; border:2px solid #00d2ff;">
                 <span id="username-display" style="color:#00d2ff; font-weight:600;"></span>
                 <button id="my-favorites-btn" class="auth-btn btn-accent">⭐ Favorites</button>
-                <a href="/api/logout-redirect" class="auth-btn btn-secondary"
-                    style="text-decoration:none; display:inline-block; padding:0.5rem 1.5rem;">Logout</a>
+                <form action="/api/logout-redirect" method="POST" style="display:inline; margin:0;">
+                    <button type="submit" class="auth-btn btn-secondary">Logout</button>
+                </form>
             </div>
         </div>
 
