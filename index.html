@@ -408,9 +408,11 @@
             sortBy: 'hot'
         };
 
+
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
             setupEventListeners();
+            restoreAppState(); // Restore previous state on page load
         });
 
         function setupEventListeners() {
@@ -430,8 +432,69 @@
             document.getElementById('apply-filters').onclick = () => {
                 currentFilters.mediaType = document.getElementById('media-filter').value;
                 currentFilters.sortBy = document.getElementById('sort-filter').value;
+                saveAppState(); // Save filters
                 renderMemes();
             };
+
+            // Save scroll position periodically
+            let scrollTimeout;
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    if (allMemes.length > 0) {
+                        localStorage.setItem('mememaster_scroll', window.scrollY);
+                    }
+                }, 500);
+            });
+        }
+
+        function saveAppState() {
+            // Save current state to localStorage
+            const state = {
+                hasLoadedFeed: allMemes.length > 0,
+                filters: currentFilters,
+                scrollPosition: window.scrollY,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('mememaster_state', JSON.stringify(state));
+        }
+
+        function restoreAppState() {
+            try {
+                const savedState = localStorage.getItem('mememaster_state');
+                if (!savedState) return;
+
+                const state = JSON.parse(savedState);
+
+                // Only restore if saved within last 30 minutes
+                const thirtyMinutes = 30 * 60 * 1000;
+                if (Date.now() - state.timestamp > thirtyMinutes) {
+                    localStorage.removeItem('mememaster_state');
+                    return;
+                }
+
+                // Restore filters
+                if (state.filters) {
+                    currentFilters = state.filters;
+                    document.getElementById('media-filter').value = currentFilters.mediaType;
+                    document.getElementById('sort-filter').value = currentFilters.sortBy;
+                }
+
+                // Auto-load feed if it was previously loaded
+                if (state.hasLoadedFeed) {
+                    document.getElementById('load-btn').style.display = 'none';
+                    loadMemes().then(() => {
+                        // Restore scroll position after content loads
+                        if (state.scrollPosition) {
+                            setTimeout(() => {
+                                window.scrollTo(0, state.scrollPosition);
+                            }, 500);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error restoring state:', e);
+            }
         }
 
         async function checkAuth() {
@@ -749,6 +812,9 @@
 
                 // Render (pass append flag and new items if appending)
                 renderMemes(append, newMemes);
+
+                // Save state after successful load
+                saveAppState();
 
             } catch (error) {
                 console.error('Error loading memes:', error);
