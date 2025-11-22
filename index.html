@@ -385,13 +385,6 @@
                 </a>
             </div>
             <div id="user-logged-in" style="display:none; gap:1rem; align-items:center;">
-                <!-- Theme Switcher -->
-                <select id="theme-selector" onchange="setTheme(this.value)"
-                    style="background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); padding:0.5rem; border-radius:8px; cursor:pointer;">
-                    <option value="dark">🌙 Dark</option>
-                    <option value="light">☀️ Light</option>
-                    <option value="cyberpunk">🤖 Cyberpunk</option>
-                </select>
                 <img id="user-avatar" src="" alt="Profile"
                     style="width:32px; height:32px; border-radius:50%; border:2px solid #00d2ff;">
                 <span id="username-display" style="color:#00d2ff; font-weight:600;"></span>
@@ -408,20 +401,32 @@
     </header>
 
     <main style="max-width:1400px; margin:0 auto; padding:2rem;">
-        <div style="text-align:center; margin-bottom:3rem;">
+        <!-- Theme Selector (Top Left) -->
+        <div style="position:fixed; top:1rem; left:1rem; z-index:1000;">
+            <select id="theme-selector" onchange="setTheme(this.value)"
+                style="background:var(--card-bg); color:var(--text-color); border:1px solid var(--border-color); padding:0.5rem 0.8rem; border-radius:8px; cursor:pointer; font-size:0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                <option value="dark">🌙 Dark</option>
+                <option value="light">☀️ Light</option>
+                <option value="cyberpunk">🤖 Cyberpunk</option>
+            </select>
+        </div>
 
-            <button id="load-btn" onclick="loadMemes()"
-                style="background:linear-gradient(135deg, #ff00cc, #333399); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,0,204,0.3); transition:transform 0.3s, box-shadow 0.3s;">
-                🚀 Load Viral Feed
-            </button>
-            <button id="start-quiz-btn" onclick="startQuiz()"
-                style="background:linear-gradient(135deg, #00c6ff, #0072ff); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(0,198,255,0.3); transition:transform 0.3s; margin-left: 1rem;">
-                🧠 Take Quiz
-            </button>
-            <button id="create-btn" onclick="showGenerator()"
-                style="background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,94,98,0.3); transition:transform 0.3s; margin-left: 1rem;">
-                🎨 Create Meme
-            </button>
+        <div style="text-align:center; margin-bottom:3rem;">
+            <!-- Main Action Buttons (Reordered) -->
+            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem;">
+                <button id="create-btn" onclick="showGenerator()" class="nav-btn"
+                    style="background:linear-gradient(135deg, #ff6b6b, #ff0055);">
+                    🎨 Create Meme
+                </button>
+                <button id="start-quiz-btn" onclick="startQuiz()" class="nav-btn"
+                    style="background:linear-gradient(135deg, #00d2ff, #3a7bd5);">
+                    🧠 Take Quiz
+                </button>
+                <button id="load-btn" onclick="loadMemes()" class="nav-btn"
+                    style="background:linear-gradient(135deg, #ff00cc, #333399);">
+                    🔥 Load Viral Feed
+                </button>
+            </div>
         </div>
 
         <div id="filter-section">
@@ -584,11 +589,11 @@
                                 <span style="font-size:0.9rem; color:white; font-weight:600;">✓ Object Selected</span>
                                 <div style="display:flex; gap:0.5rem;">
                                     <button id="edit-text-btn" onclick="editSelectedText()"
-                                        style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display:none;">
+                                        style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 4px 15px rgba(0,210,255,0.3); display:none;">
                                         ✏️ Edit Text
                                     </button>
                                     <button onclick="deleteSelectedObject()"
-                                        style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                        style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 4px 15px rgba(0,210,255,0.3);">
                                         🗑️ Delete (Del key)
                                     </button>
                                 </div>
@@ -743,6 +748,7 @@
             setupEventListeners();
             await checkAuth();
             restoreAppState(); // Restore previous state on page load
+            setupAutoSave(); // Setup auto-save for generator inputs
         });
 
         function setupEventListeners() {
@@ -760,10 +766,11 @@
             }
 
             // Feed Actions
-            document.getElementById('load-btn').onclick = () => {
-                document.getElementById('load-btn').style.display = 'none';
-                loadMemes();
-            };
+            // Removed onclick from JS, now handled directly in HTML
+            // document.getElementById('load-btn').onclick = () => {
+            //     document.getElementById('load-btn').style.display = 'none';
+            //     loadMemes();
+            // };
 
             document.getElementById('apply-filters').onclick = () => {
                 currentFilters.mediaType = document.getElementById('media-filter').value;
@@ -1636,18 +1643,6 @@
 
         async function showGenerator() {
             // Hide other sections
-            // Hide other sections
-            document.getElementById('feed-container').innerHTML = '';
-            document.getElementById('filter-section').style.display = 'none';
-            document.getElementById('load-more-btn').style.display = 'none';
-            document.getElementById('quiz-container').style.display = 'none';
-
-            // Ensure buttons are visible
-            document.getElementById('load-btn').style.display = 'inline-block';
-            document.getElementById('start-quiz-btn').style.display = 'inline-block';
-            document.getElementById('create-btn').style.display = 'inline-block';
-
-            // Show generator
             document.getElementById('generator-container').style.display = 'block';
 
             // Show close button
@@ -1862,6 +1857,94 @@
         let dragStartX, dragStartY;
         let initialWidth, initialHeight;
 
+        // Save meme generator state
+        function saveMemeState() {
+            try {
+                const state = {
+                    template: currentTemplate,
+                    topText: document.getElementById('top-text').value,
+                    bottomText: document.getElementById('bottom-text').value,
+                    topTextY: document.getElementById('top-text-y').value,
+                    bottomTextY: document.getElementById('bottom-text-y').value,
+                    textColor: document.getElementById('text-color').value,
+                    outlineColor: document.getElementById('outline-color').value,
+                    fontSize: document.getElementById('font-size').value,
+                    canvasObjects: canvasObjects,
+                    isDeepFried: isDeepFried,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('meme_generator_state', JSON.stringify(state));
+            } catch (e) {
+                console.error('Failed to save meme state:', e);
+            }
+        }
+
+        // Restore meme generator state
+        function restoreMemeState() {
+            try {
+                const saved = localStorage.getItem('meme_generator_state');
+                if (!saved) return false;
+
+                const state = JSON.parse(saved);
+                // Check if state is less than 24 hours old
+                if (Date.now() - state.timestamp > 24 * 60 * 60 * 1000) {
+                    localStorage.removeItem('meme_generator_state');
+                    return false;
+                }
+
+                // Restore template
+                if (state.template) {
+                    currentTemplate = state.template;
+                }
+
+                // Restore text inputs
+                if (state.topText) document.getElementById('top-text').value = state.topText;
+                if (state.bottomText) document.getElementById('bottom-text').value = state.bottomText;
+                if (state.topTextY) document.getElementById('top-text-y').value = state.topTextY;
+                if (state.bottomTextY) document.getElementById('bottom-text-y').value = state.bottomTextY;
+                if (state.textColor) document.getElementById('text-color').value = state.textColor;
+                if (state.outlineColor) document.getElementById('outline-color').value = state.outlineColor;
+                if (state.fontSize) document.getElementById('font-size').value = state.fontSize;
+
+                // Restore canvas objects (need to reload images)
+                if (state.canvasObjects && state.canvasObjects.length > 0) {
+                    canvasObjects = [];
+                    let loadedCount = 0;
+                    const totalImages = state.canvasObjects.filter(obj => obj.type === 'image').length;
+
+                    state.canvasObjects.forEach(obj => {
+                        if (obj.type === 'text') {
+                            canvasObjects.push(obj);
+                        } else if (obj.type === 'image') {
+                            const img = new Image();
+                            img.crossOrigin = "Anonymous";
+                            img.onload = () => {
+                                obj.imgObj = img;
+                                canvasObjects.push(obj);
+                                loadedCount++;
+                                if (loadedCount === totalImages) {
+                                    drawMeme();
+                                }
+                            };
+                            img.src = obj.content;
+                        }
+                    });
+                }
+
+                // Restore deep fry
+                if (state.isDeepFried) {
+                    isDeepFried = true;
+                }
+
+                // Redraw
+                setTimeout(() => drawMeme(), 100);
+                return true;
+            } catch (e) {
+                console.error('Failed to restore meme state:', e);
+                return false;
+            }
+        }
+
         function toggleDeepFry() {
             isDeepFried = !isDeepFried;
             const btn = document.getElementById('deep-fry-btn');
@@ -1887,6 +1970,7 @@
             });
             selectedObjectIndex = canvasObjects.length - 1;
             drawMeme();
+            saveMemeState(); // Save after adding
         }
 
         function addCustomImage(url) {
@@ -1906,6 +1990,7 @@
                 });
                 selectedObjectIndex = canvasObjects.length - 1;
                 drawMeme();
+                saveMemeState(); // Save after adding
             };
             img.src = url;
         }
@@ -1915,6 +2000,7 @@
                 canvasObjects.splice(selectedObjectIndex, 1);
                 selectedObjectIndex = -1;
                 drawMeme();
+                saveMemeState(); // Save after deleting
             }
         }
 
