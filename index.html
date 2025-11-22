@@ -698,7 +698,8 @@
             const feedContainer = document.getElementById('feed-container');
             const filterSection = document.getElementById('filter-section');
             const closeBtn = document.getElementById('close-btn');
-            const loadMoreBtn = document.getElementById('load-more-btn');
+            const loadMoreBtnDiv = document.getElementById('load-more-btn');
+            const loadMoreBtn = loadMoreBtnDiv ? loadMoreBtnDiv.querySelector('button') : null;
 
             loading.style.display = 'block';
             if (!append) {
@@ -737,6 +738,7 @@
                 filterSection.style.display = 'block';
 
                 if (closeBtn) closeBtn.style.display = 'block';
+                if (loadMoreBtnDiv) loadMoreBtnDiv.style.display = 'block';
 
                 // Refresh favorites
                 if (currentUser && !append) {
@@ -770,8 +772,7 @@
             } finally {
                 if (loadMoreBtn) {
                     loadMoreBtn.disabled = false;
-                    loadMoreBtn.innerHTML = 'Load More Memes';
-                    loadMoreBtn.style.display = 'block';
+                    loadMoreBtn.innerHTML = '🔄 Load More Memes';
                 }
             }
         }
