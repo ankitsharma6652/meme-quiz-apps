@@ -394,39 +394,61 @@
         }
 
         async function checkAuth() {
+            const status = document.getElementById('debug-status');
+            status.style.display = 'block';
+            status.innerHTML = "Checking login status...";
+
             // Check for token in URL
             const urlParams = new URLSearchParams(window.location.search);
             const tokenFromUrl = urlParams.get('token');
             const errorFromUrl = urlParams.get('error');
 
             if (errorFromUrl) {
-                alert(`Login Error: ${errorFromUrl}`);
+                status.innerHTML = `❌ Login Error: ${errorFromUrl}`;
+                status.style.background = 'red';
                 return;
             }
 
             if (tokenFromUrl) {
                 localStorage.setItem('authToken', tokenFromUrl);
+                // Clean URL
                 window.history.replaceState({}, document.title, "/");
+                status.innerHTML = "Token received! Verifying...";
             }
 
             const token = localStorage.getItem('authToken');
-            if (!token) return;
+
+            if (!token) {
+                status.innerHTML = "Not logged in (No token)";
+                status.style.background = '#555';
+                return;
+            }
 
             try {
                 const res = await fetch('/api/current-user', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
                 const data = await res.json();
+                console.log("Auth Check Result:", data);
 
                 if (data.authenticated) {
                     currentUser = data.user;
                     updateAuthUI();
                     fetchFavorites();
+                    status.style.background = 'green';
+                    status.innerHTML = `✅ <b>LOGGED IN:</b> ${currentUser.email}`;
                 } else {
+                    // Token invalid
                     localStorage.removeItem('authToken');
+                    status.innerHTML = "Session expired";
+                    status.style.background = '#555';
                 }
             } catch (e) {
-                console.error('Auth check failed:', e);
+                console.error(e);
+                status.textContent = "Error: " + e.message;
+                status.style.background = 'red';
             }
         }
 
