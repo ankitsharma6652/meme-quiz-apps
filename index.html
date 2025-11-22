@@ -461,9 +461,9 @@
         };
 
 
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
+        document.addEventListener('DOMContentLoaded', async () => {
             setupEventListeners();
+            await checkAuth();
             restoreAppState(); // Restore previous state on page load
         });
 
@@ -472,7 +472,13 @@
             const favoritesBtn = document.getElementById('my-favorites-btn');
 
             if (favoritesBtn) {
-                favoritesBtn.onclick = () => loadFavorites();
+                favoritesBtn.onclick = () => {
+                    if (!currentUser) {
+                        alert('Please sign in to view favorites!');
+                        return;
+                    }
+                    loadFavorites();
+                };
             }
 
             // Feed Actions
@@ -745,7 +751,6 @@
 
         async function loadFavorites() {
             if (!currentUser) {
-                alert('Please sign in to view favorites!');
                 return;
             }
 
