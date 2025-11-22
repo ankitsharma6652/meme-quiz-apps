@@ -169,13 +169,18 @@ def logout():
 
 @app.route('/api/logout-redirect', methods=['GET', 'POST'])
 def logout_redirect():
+    print(f"LOGOUT: User before logout: {current_user.is_authenticated if current_user else 'No user'}")
     logout_user()
     session.clear()
+    print(f"LOGOUT: Session cleared. User after logout: {current_user.is_authenticated if current_user else 'No user'}")
     response = redirect('/')
     # Prevent caching
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    # Also clear session cookie
+    response.set_cookie('session', '', expires=0)
+    print("LOGOUT: Redirect response created")
     return response
 
 
