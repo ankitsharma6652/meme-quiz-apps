@@ -462,11 +462,23 @@
                             style="width:100%; max-height:500px; background:#000; border-radius:8px; margin-bottom:1rem;"></canvas>
 
                         <div style="display:flex; flex-direction:column; gap:1rem;">
-                            <input type="text" id="top-text" placeholder="TOP TEXT" oninput="drawMeme()"
-                                style="background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" id="top-text" placeholder="TOP TEXT" oninput="drawMeme()"
+                                    style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
+                                <input type="range" id="top-text-y" min="0" max="100" value="5" oninput="drawMeme()"
+                                    style="width:50px;" title="Move Top Text Vertical">
+                            </div>
 
-                            <input type="text" id="bottom-text" placeholder="BOTTOM TEXT" oninput="drawMeme()"
-                                style="background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" id="bottom-text" placeholder="BOTTOM TEXT" oninput="drawMeme()"
+                                    style="flex:1; background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
+                                <input type="range" id="bottom-text-y" min="0" max="100" value="5" oninput="drawMeme()"
+                                    style="width:50px;" title="Move Bottom Text Vertical">
+                            </div>
+
+                            <p style="font-size:0.8rem; color:#aaa; text-align:center; margin-top:-0.5rem;">
+                                💡 Tip: Click anywhere on the image to add custom text!
+                            </p>
 
                             <!-- Styling Controls -->
                             <div
@@ -499,13 +511,20 @@
                                         Enable Drawing
                                     </button>
                                 </div>
-                                <div id="draw-controls" style="display:none; gap:1rem; align-items:center;">
+                                <div id="draw-controls"
+                                    style="display:none; gap:1rem; align-items:center; flex-wrap:wrap;">
                                     <input type="color" id="brush-color" value="#ff0000"
                                         style="border:none; background:none; cursor:pointer; width:30px; height:30px;">
                                     <input type="range" id="brush-size" min="2" max="20" value="5"
-                                        style="flex:1; cursor:pointer;">
-                                    <button onclick="clearDrawing()"
-                                        style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">Clear</button>
+                                        style="flex:1; min-width:80px; cursor:pointer;">
+                                    <div style="display:flex; gap:0.5rem;">
+                                        <button onclick="undoDrawing()"
+                                            style="background:#555; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer;">↩️</button>
+                                        <button onclick="redoDrawing()"
+                                            style="background:#555; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer;">↪️</button>
+                                        <button onclick="clearDrawing()"
+                                            style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">Clear</button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1577,6 +1596,50 @@
         let lastX = 0;
         let lastY = 0;
 
+        // Undo/Redo History
+        let drawHistory = [];
+        let historyStep = -1;
+
+        function saveDrawingState() {
+            historyStep++;
+            if (historyStep < drawHistory.length) {
+                drawHistory.length = historyStep; // Truncate redo history
+            }
+            drawHistory.push(drawingLayer.toDataURL());
+        }
+
+        function undoDrawing() {
+            if (historyStep > 0) {
+                historyStep--;
+                restoreDrawingState(drawHistory[historyStep]);
+            } else if (historyStep === 0) {
+                historyStep = -1;
+                clearDrawingLayer();
+                drawMeme();
+            }
+        }
+
+        function redoDrawing() {
+            if (historyStep < drawHistory.length - 1) {
+                historyStep++;
+                restoreDrawingState(drawHistory[historyStep]);
+            }
+        }
+
+        function restoreDrawingState(dataUrl) {
+            const img = new Image();
+            img.onload = () => {
+                clearDrawingLayer();
+                drawCtx.drawImage(img, 0, 0);
+                drawMeme();
+            };
+            img.src = dataUrl;
+        }
+
+        function clearDrawingLayer() {
+            drawCtx.clearRect(0, 0, drawingLayer.width, drawingLayer.height);
+        }
+
         function toggleDrawMode() {
             isDrawMode = !isDrawMode;
             const btn = document.getElementById('toggle-draw-btn');
@@ -1596,12 +1659,40 @@
         }
 
         function clearDrawing() {
-            drawCtx.clearRect(0, 0, drawingLayer.width, drawingLayer.height);
+            clearDrawingLayer();
+            drawHistory = [];
+            historyStep = -1;
             drawMeme();
         }
 
-        // Event Listeners for Drawing
-        memeCanvas.addEventListener('mousedown', startDrawing);
+        // Click to Add Text Logic
+        let customTexts = []; // Array of {text, x, y, color, size}
+
+        function handleCanvasClick(e) {
+            if (isDrawMode) return; // Don't add text if drawing
+
+            const rect = memeCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
+
+            const text = prompt("Enter text to add here:");
+            if (text) {
+                customTexts.push({
+                    text: text,
+                    x: x,
+                    y: y,
+                    color: document.getElementById('text-color').value,
+                    size: document.getElementById('font-size').value
+                });
+                drawMeme();
+            }
+        }
+
+        // Event Listeners for Drawing & Clicking
+        memeCanvas.addEventListener('mousedown', (e) => {
+            if (isDrawMode) startDrawing(e);
+            else handleCanvasClick(e);
+        });
         memeCanvas.addEventListener('mousemove', draw);
         memeCanvas.addEventListener('mouseup', stopDrawing);
         memeCanvas.addEventListener('mouseout', stopDrawing);
@@ -1611,10 +1702,19 @@
             e.preventDefault();
             const touch = e.touches[0];
             const rect = memeCanvas.getBoundingClientRect();
-            startDrawing({
-                offsetX: (touch.clientX - rect.left) * (memeCanvas.width / rect.width),
-                offsetY: (touch.clientY - rect.top) * (memeCanvas.height / rect.height)
-            });
+            const x = (touch.clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (memeCanvas.height / rect.height);
+
+            if (isDrawMode) {
+                startDrawing({ offsetX: x, offsetY: y });
+            } else {
+                // Simple tap detection for text could be added here, 
+                // but 'click' often works on mobile too. 
+                // For now, let's rely on the click event or add a specific tap handler if needed.
+                // Actually, touchstart prevents default so click might not fire.
+                // Let's add a simple tap handler.
+                handleCanvasClick({ clientX: touch.clientX, clientY: touch.clientY });
+            }
         });
         memeCanvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
@@ -1649,7 +1749,10 @@
         }
 
         function stopDrawing() {
-            isDrawing = false;
+            if (isDrawing) {
+                isDrawing = false;
+                saveDrawingState(); // Save state on stroke end
+            }
         }
 
         function drawMeme() {
@@ -1687,6 +1790,10 @@
                 const outlineColor = document.getElementById('outline-color').value;
                 const fontSizeVal = document.getElementById('font-size').value;
 
+                // Text Adjustment Values
+                const topTextY = document.getElementById('top-text-y').value;
+                const bottomTextY = document.getElementById('bottom-text-y').value;
+
                 ctx.fillStyle = textColor;
                 ctx.strokeStyle = outlineColor;
                 ctx.lineWidth = Math.max(2, memeCanvas.width / 200); // Dynamic stroke width
@@ -1700,7 +1807,8 @@
                 if (topText) {
                     ctx.textBaseline = 'top';
                     const x = memeCanvas.width / 2;
-                    const y = fontSize * 0.2; // Padding
+                    // Use slider value as percentage of height padding
+                    const y = (memeCanvas.height * (topTextY / 100));
                     ctx.fillText(topText, x, y);
                     ctx.strokeText(topText, x, y);
                 }
@@ -1709,10 +1817,22 @@
                 if (bottomText) {
                     ctx.textBaseline = 'bottom';
                     const x = memeCanvas.width / 2;
-                    const y = memeCanvas.height - (fontSize * 0.2);
+                    // Use slider value as percentage from bottom
+                    const y = memeCanvas.height - (memeCanvas.height * (bottomTextY / 100));
                     ctx.fillText(bottomText, x, y);
                     ctx.strokeText(bottomText, x, y);
                 }
+
+                // Draw Custom Texts
+                customTexts.forEach(ct => {
+                    ctx.fillStyle = ct.color;
+                    ctx.strokeStyle = outlineColor; // Use global outline for now, or add custom
+                    const ctFontSize = Math.floor(memeCanvas.width * (ct.size / 400));
+                    ctx.font = `bold ${ctFontSize}px Impact, sans-serif`;
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(ct.text, ct.x, ct.y);
+                    ctx.strokeText(ct.text, ct.x, ct.y);
+                });
             };
         }
 
