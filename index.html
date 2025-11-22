@@ -425,7 +425,7 @@
             const favoritesBtn = document.getElementById('my-favorites-btn');
 
             if (favoritesBtn) {
-                favoritesBtn.onclick = loadFavorites;
+                favoritesBtn.onclick = () => loadFavorites();
             }
 
             // Feed Actions
