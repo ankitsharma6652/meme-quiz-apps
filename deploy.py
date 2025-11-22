@@ -54,6 +54,7 @@ if __name__ == "__main__":
         ('index.html', 'index.html'),
         ('requirements.txt', 'requirements.txt'),
         ('add_login_history_table.py', 'add_login_history_table.py'),
+        ('check_user_table.py', 'check_user_table.py'),
         ('verify_deployment.py', 'verify_deployment.py'),
         ('diagnose_reddit.py', 'diagnose_reddit.py'),
         ('test_bypass.py', 'test_bypass.py')

@@ -127,8 +127,20 @@ def load_user(user_email):
 # It will NOT drop or recreate existing tables, so user data is preserved.
 # This is safe to run on every app startup.
 with app.app_context():
-    db.create_all()
-    print("✅ Database tables initialized (existing data preserved)")
+    try:
+        db.create_all()
+        print("✅ Database tables initialized (existing data preserved)")
+    except Exception as e:
+        # If LoginHistory table creation fails due to charset issues, 
+        # the app can still run. The table should be created manually.
+        error_msg = str(e)
+        if 'login_history' in error_msg.lower() and 'incompatible' in error_msg.lower():
+            print("⚠️  LoginHistory table needs manual creation (charset issue)")
+            print("   Run: python3 add_login_history_table.py")
+            print("   App will continue without login history tracking for now")
+        else:
+            print(f"❌ Database initialization error: {e}")
+            raise
 
 # Routes
 @app.route('/')
@@ -180,17 +192,21 @@ def authorize_google():
         session.permanent = True
         session['user_email'] = user.email
         
-        # Record login history
-        login_record = LoginHistory(
-            user_email=user.email,
-            ip_address=request.headers.get('X-Forwarded-For', request.remote_addr),
-            user_agent=request.headers.get('User-Agent', 'Unknown'),
-            login_method='google'
-        )
-        db.session.add(login_record)
-        db.session.commit()
-        
-        print(f"✅ User {user.email} logged in successfully! Login recorded.")
+        # Record login history (if table exists)
+        try:
+            login_record = LoginHistory(
+                user_email=user.email,
+                ip_address=request.headers.get('X-Forwarded-For', request.remote_addr),
+                user_agent=request.headers.get('User-Agent', 'Unknown'),
+                login_method='google'
+            )
+            db.session.add(login_record)
+            db.session.commit()
+            print(f"✅ User {user.email} logged in successfully! Login recorded.")
+        except Exception as login_history_error:
+            # If login history fails, don't block the login
+            print(f"⚠️  Login successful but history not recorded: {login_history_error}")
+            print(f"✅ User {user.email} logged in successfully!")
         
         return redirect('/')
         
