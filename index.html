@@ -557,31 +557,26 @@
 
         async function downloadMeme(url, title, isVideo) {
             try {
-                // Fetch the file
-                const response = await fetch(url);
-                const blob = await response.blob();
-
-                // Create download link
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-
                 // Set filename
                 const extension = isVideo ? 'mp4' : (url.includes('.gif') ? 'gif' : 'jpg');
                 const filename = `${title.substring(0, 50).replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+
+                // Use backend proxy to download
+                const proxyUrl = `/api/download-proxy?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+
+                // Create download link
+                const link = document.createElement('a');
+                link.href = proxyUrl;
                 link.download = filename;
+                link.target = '_blank'; // Fallback for some browsers
 
                 // Trigger download
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-
-                // Clean up
-                window.URL.revokeObjectURL(downloadUrl);
             } catch (e) {
                 console.error('Download failed:', e);
-                // Fallback: open in new tab
-                window.open(url, '_blank');
+                alert('Download failed. The file might be too large or unavailable.');
             }
         }
 
@@ -643,22 +638,26 @@
                 const activeClass = isFav ? 'active' : '';
 
                 const mediaContent = meme.is_video ? `
-                    <div style="position:relative; width:100%; background:#000;">
+                    <div style="position:relative; width:100%; background:#000; border-radius:8px; overflow:hidden;">
                         <video 
                             controls 
                             loop 
+                            muted
                             playsinline 
                             preload="metadata" 
                             style="width:100%; max-height:600px; object-fit:contain; display:block;"
-                            onerror="this.parentElement.innerHTML='<div style=\\'padding:2rem; text-align:center; color:#999;\\'>❌ Video failed to load</div>'"
+                            onloadeddata="console.log('Video loaded successfully')"
+                            onerror="console.error('Video load error'); this.parentElement.innerHTML='<div style=\\'padding:2rem; text-align:center; color:#999;\\'>❌ Video unavailable</div>'"
                         >
                             <source src="${meme.video_url || meme.url}" type="video/mp4">
-                            <source src="${meme.video_url || meme.url}" type="video/webm">
                             Your browser doesn't support video playback.
                         </video>
+                        <div style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:5px; font-size:0.75rem; color:#fff;">
+                            🔇 Click to unmute
+                        </div>
                     </div>
                 ` : `
-                    <img src="${meme.url}" alt="${meme.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage failed to load%3C/text%3E%3C/svg%3E'">
+                    <img src="${meme.url}" alt="${meme.title}" loading="lazy" style="border-radius:8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage unavailable%3C/text%3E%3C/svg%3E'">
                 `;
 
                 card.innerHTML = `

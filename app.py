@@ -275,6 +275,38 @@ def get_trending_memes():
     
     return jsonify(all_memes[:50])
 
+@app.route('/api/download-proxy', methods=['GET'])
+def download_proxy():
+    """Proxy downloads to bypass CORS restrictions"""
+    url = request.args.get('url')
+    filename = request.args.get('filename', 'download')
+    
+    if not url:
+        return jsonify({'error': 'URL required'}), 400
+    
+    try:
+        # Fetch the file
+        response = requests.get(url, stream=True, timeout=30, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+        response.raise_for_status()
+        
+        # Determine content type
+        content_type = response.headers.get('Content-Type', 'application/octet-stream')
+        
+        # Create a response with the file
+        return Response(
+            response.iter_content(chunk_size=8192),
+            content_type=content_type,
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Cache-Control': 'no-cache'
+            }
+        )
+    except Exception as e:
+        print(f"Download proxy error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/proxy-audio', methods=['GET'])
 def proxy_audio():
     """Proxy Reddit audio to bypass CORS and authentication issues"""
