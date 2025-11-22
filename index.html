@@ -578,6 +578,16 @@
                                 </div>
                             </div>
 
+                            <!-- Text Selection Controls -->
+                            <div id="text-controls"
+                                style="display:none; margin-top:0.5rem; background:#ff0055; padding:0.8rem; border-radius:8px; align-items:center; justify-content:space-between;">
+                                <span style="font-size:0.9rem; color:white; font-weight:600;">✓ Object Selected</span>
+                                <button onclick="deleteSelectedObject()"
+                                    style="background:white; color:#ff0055; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.9rem; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    🗑️ Delete (or press Delete key)
+                                </button>
+                            </div>
+
                             <!-- Effects & Stickers -->
                             <div style="margin-top:1rem;">
                                 <label
@@ -818,8 +828,7 @@
                                 });
                                 console.log('Scroll restored to:', state.scrollPosition);
                             }, 1000);
-                        }
-                    });
+                        });
                 }
                 // Auto-load feed if it was previously loaded (and not viewing favorites)
                 else if (state.hasLoadedFeed) {
@@ -2169,7 +2178,7 @@
                 draw({ offsetX: x, offsetY: y });
             } else {
                 // Simulate mousemove for object interaction
-                handleCanvasInteractionMove({ clientX: touch.clientX, clientY: touch.clientY });
+                handleCanvasInteractionMove({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
             }
         });
         memeCanvas.addEventListener('touchend', handleCanvasInteractionEnd);
@@ -2357,6 +2366,20 @@
             const themeSelect = document.getElementById('theme-selector');
             if (themeSelect) themeSelect.value = theme;
         }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Delete key or Backspace to delete selected object
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedObjectIndex !== -1) {
+                e.preventDefault(); // Prevent browser back navigation on Backspace
+                deleteSelectedObject();
+            }
+            // Escape to deselect
+            if (e.key === 'Escape' && selectedObjectIndex !== -1) {
+                selectedObjectIndex = -1;
+                drawMeme();
+            }
+        });
 
         // Load saved theme immediately (DEFAULT: LIGHT)
         (function () {
