@@ -526,6 +526,15 @@
                                             style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">Clear</button>
                                     </div>
                                 </div>
+
+                                <!-- Text Selection Controls -->
+                                <div id="text-controls"
+                                    style="display:none; margin-top:0.5rem; background:#2a2a2f; padding:0.5rem; border-radius:8px; align-items:center; justify-content:space-between;">
+                                    <span style="font-size:0.8rem; color:#aaa;">Text Selected</span>
+                                    <button onclick="deleteSelectedText()"
+                                        style="background:#dc3545; color:white; border:none; padding:0.3rem 0.6rem; border-radius:4px; cursor:pointer; font-size:0.8rem;">🗑️
+                                        Delete</button>
+                                </div>
                             </div>
 
                             <!-- Effects & Stickers -->
@@ -1698,9 +1707,11 @@
             drawMeme();
         }
 
-        // Click to Add Text Logic
+        // Click to Add Text & Drag Logic
         let customTexts = []; // Array of {text, x, y, color, size}
         let isDeepFried = false;
+        let selectedTextIndex = -1;
+        let isDraggingText = false;
 
         function toggleDeepFry() {
             isDeepFried = !isDeepFried;
@@ -1724,67 +1735,141 @@
                 color: '#ffffff',
                 size: 100 // Default large size for emojis
             });
+            selectedTextIndex = customTexts.length - 1; // Select new sticker
             drawMeme();
         }
 
-        function handleCanvasClick(e) {
-            if (isDrawMode) return; // Don't add text if drawing
-
-            const rect = memeCanvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * (memeCanvas.width / rect.width);
-            const y = (e.clientY - rect.top) * (memeCanvas.height / rect.height);
-
-            const text = prompt("Enter text to add here:");
-            if (text) {
-                customTexts.push({
-                    text: text,
-                    x: x,
-                    y: y,
-                    color: document.getElementById('text-color').value,
-                    size: document.getElementById('font-size').value
-                });
+        function deleteSelectedText() {
+            if (selectedTextIndex !== -1) {
+                customTexts.splice(selectedTextIndex, 1);
+                selectedTextIndex = -1;
                 drawMeme();
             }
+        }
+
+        function getHitTextIndex(x, y) {
+            // Iterate backwards to select top-most text first
+            for (let i = customTexts.length - 1; i >= 0; i--) {
+                const ct = customTexts[i];
+                const fontSize = Math.floor(memeCanvas.width * (ct.size / 400));
+                ctx.font = `bold ${fontSize}px Impact, sans-serif`;
+                const metrics = ctx.measureText(ct.text);
+                const width = metrics.width;
+                const height = fontSize; // Approx height
+
+                // Text is drawn centered at ct.x, ct.y (middle baseline approx)
+                const left = ct.x - width / 2;
+                const right = ct.x + width / 2;
+                const top = ct.y - height / 2;
+                const bottom = ct.y + height / 2;
+
+                // Add some padding for easier selection
+                const pad = 10;
+                if (x >= left - pad && x <= right + pad && y >= top - pad && y <= bottom + pad) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function handleCanvasInteraction(e, isTouch = false) {
+            const rect = memeCanvas.getBoundingClientRect();
+            const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+            const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+            const x = (clientX - rect.left) * (memeCanvas.width / rect.width);
+            const y = (clientY - rect.top) * (memeCanvas.height / rect.height);
+
+            // Check if we hit existing text
+            const hitIndex = getHitTextIndex(x, y);
+
+            if (hitIndex !== -1) {
+                // Select text and start dragging
+                selectedTextIndex = hitIndex;
+                isDraggingText = true;
+                drawMeme();
+            } else {
+                // Deselect if clicked elsewhere
+                if (selectedTextIndex !== -1) {
+                    selectedTextIndex = -1;
+                    drawMeme();
+                    return;
+                }
+
+                // Add new text if nothing selected and not dragging
+                const text = prompt("Enter text to add here:");
+                if (text) {
+                    customTexts.push({
+                        text: text,
+                        x: x,
+                        y: y,
+                        color: document.getElementById('text-color').value,
+                        size: document.getElementById('font-size').value
+                    });
+                    selectedTextIndex = customTexts.length - 1;
+                    drawMeme();
+                }
+            }
+        }
+
+        function handleDrag(e, isTouch = false) {
+            if (isDraggingText && selectedTextIndex !== -1) {
+                if (isTouch) e.preventDefault(); // Prevent scrolling
+
+                const rect = memeCanvas.getBoundingClientRect();
+                const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+                const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+
+                const x = (clientX - rect.left) * (memeCanvas.width / rect.width);
+                const y = (clientY - rect.top) * (memeCanvas.height / rect.height);
+
+                customTexts[selectedTextIndex].x = x;
+                customTexts[selectedTextIndex].y = y;
+                drawMeme();
+            } else if (isDrawMode) {
+                if (isTouch) {
+                    const rect = memeCanvas.getBoundingClientRect();
+                    const x = (e.touches[0].clientX - rect.left) * (memeCanvas.width / rect.width);
+                    const y = (e.touches[0].clientY - rect.top) * (memeCanvas.height / rect.height);
+                    draw({ offsetX: x, offsetY: y });
+                } else {
+                    draw(e);
+                }
+            }
+        }
+
+        function stopDrag() {
+            isDraggingText = false;
+            if (isDrawing) stopDrawing();
         }
 
         // Event Listeners for Drawing & Clicking
         memeCanvas.addEventListener('mousedown', (e) => {
             if (isDrawMode) startDrawing(e);
-            else handleCanvasClick(e);
+            else handleCanvasInteraction(e, false);
         });
-        memeCanvas.addEventListener('mousemove', draw);
-        memeCanvas.addEventListener('mouseup', stopDrawing);
-        memeCanvas.addEventListener('mouseout', stopDrawing);
+
+        memeCanvas.addEventListener('mousemove', (e) => handleDrag(e, false));
+        memeCanvas.addEventListener('mouseup', stopDrag);
+        memeCanvas.addEventListener('mouseout', stopDrag);
 
         // Touch support
         memeCanvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = memeCanvas.getBoundingClientRect();
-            const x = (touch.clientX - rect.left) * (memeCanvas.width / rect.width);
-            const y = (touch.clientY - rect.top) * (memeCanvas.height / rect.height);
-
             if (isDrawMode) {
+                e.preventDefault();
+                const rect = memeCanvas.getBoundingClientRect();
+                const x = (e.touches[0].clientX - rect.left) * (memeCanvas.width / rect.width);
+                const y = (e.touches[0].clientY - rect.top) * (memeCanvas.height / rect.height);
                 startDrawing({ offsetX: x, offsetY: y });
             } else {
-                // Simple tap detection for text could be added here, 
-                // but 'click' often works on mobile too. 
-                // For now, let's rely on the click event or add a specific tap handler if needed.
-                // Actually, touchstart prevents default so click might not fire.
-                // Let's add a simple tap handler.
-                handleCanvasClick({ clientX: touch.clientX, clientY: touch.clientY });
+                // For touch, we need to distinguish tap vs drag start
+                // But handleCanvasInteraction handles selection which initiates drag
+                handleCanvasInteraction(e, true);
             }
         });
-        memeCanvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = memeCanvas.getBoundingClientRect();
-            draw({
-                offsetX: (touch.clientX - rect.left) * (memeCanvas.width / rect.width),
-                offsetY: (touch.clientY - rect.top) * (memeCanvas.height / rect.height)
-            });
-        });
-        memeCanvas.addEventListener('touchend', stopDrawing);
+
+        memeCanvas.addEventListener('touchmove', (e) => handleDrag(e, true));
+        memeCanvas.addEventListener('touchend', stopDrag);
 
         function startDrawing(e) {
             if (!isDrawMode) return;
@@ -1896,15 +1981,35 @@
                 }
 
                 // Draw Custom Texts
-                customTexts.forEach(ct => {
+                customTexts.forEach((ct, index) => {
                     ctx.fillStyle = ct.color;
-                    ctx.strokeStyle = outlineColor; // Use global outline for now, or add custom
+                    ctx.strokeStyle = outlineColor;
                     const ctFontSize = Math.floor(memeCanvas.width * (ct.size / 400));
                     ctx.font = `bold ${ctFontSize}px Impact, sans-serif`;
                     ctx.textBaseline = 'middle';
                     ctx.fillText(ct.text, ct.x, ct.y);
                     ctx.strokeText(ct.text, ct.x, ct.y);
+
+                    // Draw selection box if selected
+                    if (index === selectedTextIndex) {
+                        const metrics = ctx.measureText(ct.text);
+                        const width = metrics.width;
+                        const height = ctFontSize;
+                        ctx.strokeStyle = '#00d2ff';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.strokeRect(ct.x - width / 2 - 5, ct.y - height / 2 - 5, width + 10, height + 10);
+                        ctx.setLineDash([]);
+                    }
                 });
+
+                // Show/Hide Text Controls
+                const textControls = document.getElementById('text-controls');
+                if (selectedTextIndex !== -1) {
+                    textControls.style.display = 'flex';
+                } else {
+                    textControls.style.display = 'none';
+                }
             };
         }
 
