@@ -661,8 +661,17 @@
             if (currentFilters.sortBy === 'top') {
                 filtered.sort((a, b) => b.ups - a.ups);
             } else if (currentFilters.sortBy === 'new') {
-                // Simple shuffle for "new" since we don't have timestamps
                 filtered.sort(() => Math.random() - 0.5);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:3rem; width:100%;">
+                        <p style="font-size:1.5rem; margin-bottom:1rem;">😕 No ${currentFilters.mediaType} found.</p>
+                        <p style="color:#aaa;">Try switching the filter to "All Content" or load more memes.</p>
+                    </div>
+                `;
+                return;
             }
 
             filtered.forEach(meme => {

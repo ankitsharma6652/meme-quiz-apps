@@ -478,9 +478,12 @@ def process_reddit_posts(posts, memes_list, source='Reddit'):
 
 def fetch_video_memes():
     """Fetches video memes directly from Reddit JSON"""
-    video_subs = ['DesiVideoMemes', 'IndianDankMemes', 'bollywoodmemes']
+    video_subs = ['DesiVideoMemes', 'IndianDankMemes', 'bollywoodmemes', 'IndianHumor']
     videos = []
-    headers = {'User-Agent': 'MemeQuizApp/1.0'}
+    # Use a real browser User-Agent to avoid 429/403 errors
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     
     for sub in video_subs:
         try:
