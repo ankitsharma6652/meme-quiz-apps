@@ -478,9 +478,10 @@
                 });
                 const data = await res.json();
                 userFavorites = new Set(data.map(f => f.meme_id));
+                console.log('Fetched favorites:', userFavorites);
                 // Re-render to update heart icons
                 if (allMemes.length > 0) renderMemes();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error('Error fetching favorites:', e); }
         }
 
         async function toggleFavorite(meme, btn) {
@@ -660,6 +661,12 @@
                 // Use meme_id if available (from favorites), otherwise use id
                 const memeId = meme.meme_id || meme.id;
                 const isFav = userFavorites.has(memeId);
+
+                // Debug logging (remove after fixing)
+                if (isFav) {
+                    console.log(`Meme "${meme.title}" is favorited. ID: ${memeId}`);
+                }
+
                 const heartIcon = isFav ? '❤️' : '🤍';
                 const activeClass = isFav ? 'active' : '';
 
