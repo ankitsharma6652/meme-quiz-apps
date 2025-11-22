@@ -100,10 +100,6 @@ def login_google():
     print(f"Redirect URI: {redirect_uri}")
     return google.authorize_redirect(redirect_uri)
 
-# Simple in-memory token store (for demo purposes)
-# In production, use Redis or Database
-USER_TOKENS = {}
-
 @app.route('/authorize/google')
 def authorize_google():
     print("Callback received from Google!")
@@ -112,10 +108,13 @@ def authorize_google():
         resp = google.get('userinfo')
         user_info = resp.json()
         
+        print(f"Google User Info: {user_info}")
+        
         # Check if user exists
         user = User.query.filter_by(email=user_info['email']).first()
         
         if not user:
+            print("Creating new user...")
             user = User(
                 email=user_info['email'],
                 name=user_info['name'],
@@ -124,18 +123,19 @@ def authorize_google():
             db.session.add(user)
             db.session.commit()
         else:
+            print(f"Updating existing user: {user.email}")
             user.name = user_info['name']
             user.picture = user_info['picture']
             db.session.commit()
             
-        # Generate Token
-        auth_token = secrets.token_hex(16)
-        USER_TOKENS[auth_token] = user.id
+        # Use Flask-Login for session management
+        login_user(user, remember=True)
+        session.permanent = True
+        session['user_id'] = user.id
         
-        print(f"Generated Token for {user.email}: {auth_token}")
+        print(f"User {user.email} logged in successfully!")
         
-        # Redirect with token
-        return redirect(f'/?token={auth_token}')
+        return redirect('/')
         
     except Exception as e:
         error_msg = str(e).replace('\n', ' ').replace('\r', '')
@@ -143,39 +143,38 @@ def authorize_google():
         return redirect(f'/?error={error_msg}')
 
 def get_user_from_token():
-    auth_header = request.headers.get('Authorization')
-    if not auth_header:
-        return None
+    """Fallback for API requests - check both session and current_user"""
+    if current_user.is_authenticated:
+        return current_user
     
-    token = auth_header.replace('Bearer ', '')
-    user_id = USER_TOKENS.get(token)
-    
+    # Also check session directly
+    user_id = session.get('user_id')
     if user_id:
         return User.query.get(user_id)
+    
     return None
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
-    # Client should delete token
+    logout_user()
+    session.clear()
     return jsonify({'message': 'Logged out successfully'})
 
 @app.route('/api/current-user', methods=['GET'])
 def get_current_user():
-    user = get_user_from_token()
-    
-    if user:
-        print(f"Token valid for user: {user.email}")
+    if current_user.is_authenticated:
+        print(f"User authenticated: {current_user.email}")
         return jsonify({
             'authenticated': True,
             'user': {
-                'id': user.id,
-                'name': user.name,
-                'email': user.email,
-                'picture': user.picture
+                'id': current_user.id,
+                'name': current_user.name,
+                'email': current_user.email,
+                'picture': current_user.picture
             }
         })
     
-    print("No valid token found")
+    print("No user authenticated")
     return jsonify({'authenticated': False})
 
 # Favorites Routes
