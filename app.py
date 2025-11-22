@@ -393,69 +393,76 @@ def proxy_audio():
         return jsonify({'error': str(e)}), 500
 
 def fetch_reddit_memes():
-    # Prioritize Indian subreddits
-    subreddits = ['IndiaMemes', 'IndianDankMemes', 'bakchodi', 'IndianMeyMeys', 'memes', 'dankmemes']
+    # Prioritize Indian subreddits - HEAVILY
+    indian_subreddits = [
+        'IndianDankMemes', 'IndiaMemes', 'SaimanSays', 'DesiMemes', 
+        'bakchodi', 'IndianMeyMeys', 'bollywoodmemes', 'Chodi'
+    ]
+    global_subreddits = ['memes', 'dankmemes', 'wholesomememes']
+    
     memes = []
     headers = {'User-Agent': 'MemeQuizApp/1.0'}
     
     try:
-        # Fetch more from Indian subreddits (first 4 are Indian)
-        for i, sub in enumerate(subreddits[:6]):
-            # Get more posts from Indian subreddits
-            limit = 30 if i < 4 else 15
-            url = f'https://www.reddit.com/r/{sub}/hot.json?limit={limit}'
-            response = requests.get(url, headers=headers, timeout=5)
-            
-            if response.status_code != 200:
-                continue
-                
-            data = response.json()
-            posts = data.get('data', {}).get('children', [])
+        # 1. Fetch from Indian Subreddits (High Priority)
+        for sub in indian_subreddits:
+            try:
+                url = f'https://www.reddit.com/r/{sub}/hot.json?limit=40' # Fetch MORE
+                response = requests.get(url, headers=headers, timeout=3)
+                if response.status_code == 200:
+                    data = response.json()
+                    posts = data.get('data', {}).get('children', [])
+                    process_reddit_posts(posts, memes, source=f'Reddit ({sub})')
+            except Exception as e:
+                print(f"Error fetching from {sub}: {e}")
 
-            for post in posts:
-                p_data = post.get('data', {})
+        # 2. Fetch from Global Subreddits (Low Priority - Filler)
+        for sub in global_subreddits:
+            try:
+                url = f'https://www.reddit.com/r/{sub}/hot.json?limit=10' # Fetch LESS
+                response = requests.get(url, headers=headers, timeout=3)
+                if response.status_code == 200:
+                    data = response.json()
+                    posts = data.get('data', {}).get('children', [])
+                    process_reddit_posts(posts, memes, source='Reddit')
+            except Exception:
+                pass
                 
-                if p_data.get('stickied') or p_data.get('is_self'):
-                    continue
-
-                meme = {
-                    'id': f"reddit_{p_data.get('id')}",
-                    'title': p_data.get('title'),
-                    'ups': p_data.get('ups'),
-                    'url': p_data.get('url'),
-                    'is_video': p_data.get('is_video', False),
-                    'source': 'Reddit'
-                }
-                
-                # TEMPORARILY SKIP ALL VIDEOS - only show images
-                if meme['is_video'] or p_data.get('is_video'):
-                    continue
-                
-                # Handle Reddit videos (DISABLED FOR NOW)
-                # if meme['is_video'] and p_data.get('secure_media'):
-                #     video_data = p_data.get('secure_media', {}).get('reddit_video', {})
-                #     fallback_url = video_data.get('fallback_url')  # Most reliable
-                #     
-                #     if fallback_url:
-                #         meme['video_url'] = html.unescape(fallback_url)
-                #         meme['url'] = meme['video_url']
-                #     else:
-                #         meme['is_video'] = False
-                
-                # Skip .gifv and .mp4 links
-                if meme['url'].endswith(('.mp4', '.gifv', '.gif')):
-                    continue
-
-                # Validate image URLs only
-                valid_extensions = ('.jpg', '.jpeg', '.png', '.webp')
-                if not meme['url'].endswith(valid_extensions):
-                    continue
-
-                memes.append(meme)
     except Exception as e:
         print(f"Reddit fetch error: {e}")
     
     return memes
+
+def process_reddit_posts(posts, memes_list, source='Reddit'):
+    for post in posts:
+        p_data = post.get('data', {})
+        
+        if p_data.get('stickied') or p_data.get('is_self'):
+            continue
+
+        meme = {
+            'id': f"reddit_{p_data.get('id')}",
+            'title': p_data.get('title'),
+            'ups': p_data.get('ups'),
+            'url': p_data.get('url'),
+            'is_video': p_data.get('is_video', False),
+            'source': source
+        }
+        
+        # TEMPORARILY SKIP ALL VIDEOS - only show images
+        if meme['is_video'] or p_data.get('is_video'):
+            continue
+        
+        # Skip .gifv and .mp4 links
+        if meme['url'].endswith(('.mp4', '.gifv', '.gif')):
+            continue
+
+        # Validate image URLs only
+        valid_extensions = ('.jpg', '.jpeg', '.png', '.webp')
+        if not meme['url'].endswith(valid_extensions):
+            continue
+
+        memes_list.append(meme)
 
 def fetch_imgur_memes():
     memes = []
