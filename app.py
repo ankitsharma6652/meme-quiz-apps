@@ -152,16 +152,16 @@ with app.app_context():
         db.create_all()
         print("✅ Database tables initialized (existing data preserved)")
     except Exception as e:
-        # If LoginHistory table creation fails due to charset issues, 
-        # the app can still run. The table should be created manually.
-        error_msg = str(e)
-        if 'login_history' in error_msg.lower() and 'incompatible' in error_msg.lower():
-            print("⚠️  LoginHistory table needs manual creation (charset issue)")
-            print("   Run: python3 add_login_history_table.py")
-            print("   App will continue without login history tracking for now")
+        # If table creation fails due to charset/schema issues, 
+        # the app can still run. Tables should be created manually.
+        error_msg = str(e).lower()
+        if ('login_history' in error_msg or 'user_memes' in error_msg) and 'incompatible' in error_msg:
+            print("⚠️  Some tables need manual creation (charset/schema issue)")
+            print("   The app will run, but some features may be limited.")
+            print("   Contact admin to fix database schema.")
         else:
-            print(f"❌ Database initialization error: {e}")
-            raise
+            print(f"⚠️  Database initialization warning: {str(e)}")
+            print("   App will continue, but some features may not work.")
 
 # Routes
 @app.route('/')
