@@ -613,16 +613,22 @@
                 const activeClass = isFav ? 'active' : '';
 
                 const mediaContent = meme.is_video ? `
-                    <div style="position:relative;">
-                        <video controls loop playsinline preload="metadata" style="width:100%; max-height:700px;">
-                            <source src="${meme.video_url}" type="video/mp4">
+                    <div style="position:relative; width:100%; background:#000;">
+                        <video 
+                            controls 
+                            loop 
+                            playsinline 
+                            preload="metadata" 
+                            style="width:100%; max-height:600px; object-fit:contain; display:block;"
+                            onerror="this.parentElement.innerHTML='<div style=\\'padding:2rem; text-align:center; color:#999;\\'>❌ Video failed to load</div>'"
+                        >
+                            <source src="${meme.video_url || meme.url}" type="video/mp4">
+                            <source src="${meme.video_url || meme.url}" type="video/webm">
+                            Your browser doesn't support video playback.
                         </video>
-                        <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:5px; font-size:0.8rem;">
-                            🔇 Silent Video
-                        </div>
                     </div>
                 ` : `
-                    <img src="${meme.url}" alt="${meme.title}" loading="lazy">
+                    <img src="${meme.url}" alt="${meme.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImage failed to load%3C/text%3E%3C/svg%3E'">
                 `;
 
                 card.innerHTML = `
