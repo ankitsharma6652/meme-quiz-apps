@@ -3,9 +3,9 @@ import requests
 import sys
 
 # Configuration
-USERNAME = os.environ.get('PA_USERNAME')
-TOKEN = os.environ.get('PA_API_TOKEN')
-DOMAIN = os.environ.get('PA_DOMAIN')
+USERNAME = os.environ.get('PA_USERNAME', '').strip()
+TOKEN = os.environ.get('PA_API_TOKEN', '').strip()
+DOMAIN = os.environ.get('PA_DOMAIN', '').strip()
 BASE_URL = f"https://www.pythonanywhere.com/api/v0/user/{USERNAME}"
 
 if not all([USERNAME, TOKEN, DOMAIN]):
