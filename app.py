@@ -167,6 +167,13 @@ def logout():
     session.clear()
     return jsonify({'message': 'Logged out successfully'})
 
+@app.route('/api/logout-redirect', methods=['GET'])
+def logout_redirect():
+    logout_user()
+    session.clear()
+    return redirect('/')
+
+
 @app.route('/api/current-user', methods=['GET'])
 def get_current_user():
     if current_user.is_authenticated:
