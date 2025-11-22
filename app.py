@@ -377,16 +377,10 @@ def fetch_reddit_memes():
                 # Handle Reddit videos (they have separate audio/video streams)
                 if meme['is_video'] and p_data.get('secure_media'):
                     video_data = p_data.get('secure_media', {}).get('reddit_video', {})
-                    hls_url = video_data.get('hls_url')  # HLS stream with audio
-                    fallback_url = video_data.get('fallback_url')  # Video only, no audio
+                    fallback_url = video_data.get('fallback_url')  # Most reliable
                     
-                    # Prefer HLS URL as it includes audio
-                    if hls_url:
-                        # Convert HLS to direct MP4 URL (Reddit pattern)
-                        meme['video_url'] = html.unescape(hls_url.replace('/HLSPlaylist.m3u8', '/DASH_720.mp4'))
-                        meme['url'] = meme['video_url']
-                    elif fallback_url:
-                        # Fallback to video-only stream
+                    if fallback_url:
+                        # Use fallback URL (video-only, but most reliable)
                         meme['video_url'] = html.unescape(fallback_url)
                         meme['url'] = meme['video_url']
                     else:
