@@ -910,6 +910,12 @@ def fetch_imgur_memes():
 @login_required
 def post_meme():
     try:
+        # Check if UserMeme table exists
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if 'user_memes' not in inspector.get_table_names():
+            return jsonify({'error': 'Feature not available yet. Please contact admin.'}), 503
+        
         data = request.get_json()
         image_data = data.get('image_data')
         title = data.get('title', 'Untitled Meme')
@@ -935,11 +941,17 @@ def post_meme():
     except Exception as e:
         print(f"Error posting meme: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': 'Failed to post meme'}), 500
+        return jsonify({'error': 'Failed to post meme. Feature may not be available yet.'}), 500
 
 @app.route('/api/user-memes', methods=['GET'])
 def get_user_memes():
     try:
+        # Check if UserMeme table exists
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if 'user_memes' not in inspector.get_table_names():
+            return jsonify([])  # Return empty array if table doesn't exist
+        
         # Get recent user-generated memes
         memes = UserMeme.query.order_by(UserMeme.created_at.desc()).limit(50).all()
         
@@ -959,7 +971,7 @@ def get_user_memes():
         return jsonify(result)
     except Exception as e:
         print(f"Error fetching user memes: {str(e)}")
-        return jsonify({'error': 'Failed to fetch user memes'}), 500
+        return jsonify([])  # Return empty array on error
 
 if __name__ == '__main__':
     print("Starting MemeMaster Server...")
