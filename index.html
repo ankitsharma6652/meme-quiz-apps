@@ -716,6 +716,14 @@
                     permalink: fav.meme_url
                 }));
 
+                // Log each transformed meme for debugging
+                console.log('Transformed memes:');
+                allMemes.forEach((meme, i) => {
+                    console.log(`${i + 1}. ${meme.title}`);
+                    console.log(`   URL: ${meme.url}`);
+                    console.log(`   Is Video: ${meme.is_video}`);
+                });
+
                 // Update userFavorites set with all loaded favorites
                 userFavorites = new Set(allMemes.map(m => m.meme_id));
 
