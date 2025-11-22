@@ -381,6 +381,10 @@
                 style="background:linear-gradient(135deg, #00c6ff, #0072ff); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(0,198,255,0.3); transition:transform 0.3s; margin-left: 1rem;">
                 🧠 Take Quiz
             </button>
+            <button id="create-btn" onclick="showGenerator()"
+                style="background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,94,98,0.3); transition:transform 0.3s; margin-left: 1rem;">
+                🎨 Create Meme
+            </button>
         </div>
 
         <div id="filter-section">
@@ -435,6 +439,41 @@
             </div>
             <div id="quiz-card" class="meme-card" style="text-align:center;">
                 <!-- Content injected by JS -->
+            </div>
+        </div>
+
+        <div id="generator-container" style="display:none; max-width:1000px; margin:0 auto;">
+            <div style="display:flex; gap:2rem; flex-wrap:wrap;">
+                <!-- Template List -->
+                <div
+                    style="flex:1; min-width:300px; height:600px; overflow-y:auto; background:#1a1a1f; padding:1rem; border-radius:15px; border:1px solid #333;">
+                    <h3 style="margin-bottom:1rem; position:sticky; top:0; background:#1a1a1f; padding-bottom:0.5rem;">
+                        Choose Template</h3>
+                    <div id="template-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:0.5rem;">
+                        <!-- Templates injected here -->
+                    </div>
+                </div>
+
+                <!-- Canvas & Controls -->
+                <div style="flex:1.5; min-width:300px;">
+                    <div style="background:#1a1a1f; padding:1.5rem; border-radius:15px; border:1px solid #333;">
+                        <canvas id="meme-canvas"
+                            style="width:100%; max-height:500px; background:#000; border-radius:8px; margin-bottom:1rem;"></canvas>
+
+                        <div style="display:flex; flex-direction:column; gap:1rem;">
+                            <input type="text" id="top-text" placeholder="TOP TEXT" oninput="drawMeme()"
+                                style="background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
+
+                            <input type="text" id="bottom-text" placeholder="BOTTOM TEXT" oninput="drawMeme()"
+                                style="background:#2a2a2f; border:1px solid #444; color:white; padding:0.8rem; border-radius:8px; font-size:1.1rem;">
+
+                            <button onclick="downloadCreatedMeme()"
+                                style="background:linear-gradient(135deg, #ff9966, #ff5e62); color:white; border:none; padding:1rem; font-size:1.1rem; border-radius:8px; cursor:pointer; font-weight:600; margin-top:0.5rem;">
+                                💾 Download Meme
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1318,6 +1357,125 @@
             setTimeout(() => {
                 loadQuizQuestion();
             }, 1500);
+        }
+
+        // Meme Generator Logic
+        let currentTemplate = null;
+        let memeCanvas = document.getElementById('meme-canvas');
+        let ctx = memeCanvas.getContext('2d');
+
+        async function showGenerator() {
+            // Hide other sections
+            document.getElementById('feed-container').innerHTML = '';
+            document.getElementById('filter-section').style.display = 'none';
+            document.getElementById('load-btn').style.display = 'none';
+            document.getElementById('start-quiz-btn').style.display = 'none';
+            document.getElementById('create-btn').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('load-more-btn').style.display = 'none';
+
+            // Show generator
+            document.getElementById('generator-container').style.display = 'block';
+
+            // Show close button
+            const closeBtn = document.getElementById('close-btn');
+            closeBtn.style.display = 'block';
+            closeBtn.querySelector('button').onclick = () => {
+                localStorage.removeItem('mememaster_state');
+                location.reload();
+            };
+
+            // Fetch templates if empty
+            if (document.getElementById('template-grid').children.length === 0) {
+                await fetchTemplates();
+            }
+        }
+
+        async function fetchTemplates() {
+            try {
+                const res = await fetch('https://api.imgflip.com/get_memes');
+                const data = await res.json();
+
+                if (data.success) {
+                    const grid = document.getElementById('template-grid');
+                    data.data.memes.forEach(meme => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `<img src="${meme.url}" style="width:100%; border-radius:4px; cursor:pointer; border:2px solid transparent;" loading="lazy" alt="${meme.name}">`;
+                        div.onclick = () => selectTemplate(meme, div);
+                        grid.appendChild(div);
+                    });
+
+                    // Select first one by default
+                    if (data.data.memes.length > 0) {
+                        selectTemplate(data.data.memes[0], grid.children[0]);
+                    }
+                }
+            } catch (e) {
+                console.error('Error fetching templates:', e);
+            }
+        }
+
+        function selectTemplate(meme, element) {
+            currentTemplate = meme;
+
+            // Highlight selection
+            const grid = document.getElementById('template-grid');
+            Array.from(grid.children).forEach(c => c.querySelector('img').style.borderColor = 'transparent');
+            element.querySelector('img').style.borderColor = '#ff5e62';
+
+            // Load image to canvas
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                memeCanvas.width = meme.width;
+                memeCanvas.height = meme.height;
+                drawMeme();
+            };
+            img.src = meme.url;
+        }
+
+        function drawMeme() {
+            if (!currentTemplate) return;
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = currentTemplate.url;
+
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+
+                const topText = document.getElementById('top-text').value.toUpperCase();
+                const bottomText = document.getElementById('bottom-text').value.toUpperCase();
+
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = Math.max(2, memeCanvas.width / 200); // Dynamic stroke width
+                ctx.textAlign = 'center';
+
+                const fontSize = Math.floor(memeCanvas.width / 10);
+                ctx.font = `bold ${fontSize}px Impact, sans-serif`;
+
+                // Draw Top Text
+                if (topText) {
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(topText, memeCanvas.width / 2, 20);
+                    ctx.strokeText(topText, memeCanvas.width / 2, 20);
+                }
+
+                // Draw Bottom Text
+                if (bottomText) {
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(bottomText, memeCanvas.width / 2, memeCanvas.height - 20);
+                    ctx.strokeText(bottomText, memeCanvas.width / 2, memeCanvas.height - 20);
+                }
+            };
+        }
+
+        function downloadCreatedMeme() {
+            const link = document.createElement('a');
+            link.download = `meme-${Date.now()}.png`;
+            link.href = memeCanvas.toDataURL();
+            link.click();
         }
     </script>
 </body>
