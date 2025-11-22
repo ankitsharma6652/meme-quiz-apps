@@ -1,0 +1,8 @@
+.env
+*.pyc
+__pycache__/
+mememaster.db
+*.db
+.DS_Store
+venv/
+env/

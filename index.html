@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemeMaster - Trending Viral Memes</title>
+    <meta name="description" content="Discover the hottest viral memes and videos from across the internet.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a0c;
+            --text-color: #ffffff;
+            --primary-gradient: linear-gradient(135deg, #ff00cc, #333399);
+            --secondary-gradient: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Outfit', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .background-glow {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(100, 0, 200, 0.15), transparent 60%);
+            z-index: -1;
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Header & User Menu */
+        header {
+            text-align: center;
+            padding: 3rem 1rem 2rem;
+            position: relative;
+        }
+
+        .user-menu-container {
+            position: absolute;
+            top: 1rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            .user-menu-container {
+                position: relative;
+                top: 0;
+                right: 0;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+        }
+
+        .auth-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.2s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--secondary-gradient);
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-accent {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff00cc, #333399, #00d2ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -2px;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1a1a1f;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            background: #0a0a0c;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #00d2ff;
+        }
+
+        /* Meme Feed */
+        .meme-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .meme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .meme-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meme-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .fav-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: #555;
+        }
+
+        .fav-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .fav-btn.active {
+            color: #ff0055;
+        }
+
+        .meme-media {
+            width: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        .meme-media img,
+        .meme-media video {
+            max-width: 100%;
+            max-height: 700px;
+            object-fit: contain;
+        }
+
+        .meme-footer {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #00d2ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Filter Section */
+        #filter-section {
+            display: none;
+            max-width: 700px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <header>
+        <div class="user-menu-container">
+            <div id="user-logged-out" style="display:flex; gap:1rem;">
+                <a href="/login/google" class="auth-btn btn-primary"
+                    style="text-decoration:none; display:flex; align-items:center; gap:0.5rem;">
+                    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
+                            fill="#4285F4"></path>
+                        <path
+                            d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+                            fill="#34A853"></path>
+                        <path
+                            d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+                            fill="#FBBC05"></path>
+                        <path
+                            d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+                            fill="#EA4335"></path>
+                    </svg>
+                    Sign in with Google
+                </a>
+            </div>
+            <div id="user-logged-in" style="display:none; gap:1rem; align-items:center;">
+                <img id="user-avatar" src="" alt="Profile"
+                    style="width:32px; height:32px; border-radius:50%; border:2px solid #00d2ff;">
+                <span id="username-display" style="color:#00d2ff; font-weight:600;"></span>
+                <button id="my-favorites-btn" class="auth-btn btn-accent">⭐ Favorites</button>
+                <button id="logout-btn" class="auth-btn btn-secondary">Logout</button>
+            </div>
+        </div>
+
+        <h1>MemeMaster</h1>
+        <p style="font-size:1.2rem; color:#aaa; font-weight:300;">Discover the Hottest Viral Memes 🔥</p>
+    </header>
+
+    <main style="max-width:1400px; margin:0 auto; padding:2rem;">
+        <div style="text-align:center; margin-bottom:3rem;">
+            <button id="load-btn"
+                style="background:linear-gradient(135deg, #ff00cc, #333399); color:white; border:none; padding:1rem 3rem; font-size:1.2rem; border-radius:50px; cursor:pointer; font-weight:600; box-shadow:0 10px 30px rgba(255,0,204,0.3); transition:transform 0.3s, box-shadow 0.3s;">
+                🚀 Load Viral Feed
+            </button>
+        </div>
+
+        <div id="filter-section">
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; justify-content:center;">
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <label style="color:#aaa; font-size:0.9rem;">Show:</label>
+                    <select id="media-filter"
+                        style="background:#1a1a1f; color:white; border:1px solid #333; padding:0.5rem 1rem; border-radius:8px; font-family:inherit; cursor:pointer;">
+                        <option value="all">All Content</option>
+                        <option value="images">Images Only</option>
+                        <option value="videos">Videos Only</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <label style="color:#aaa; font-size:0.9rem;">Sort by:</label>
+                    <select id="sort-filter"
+                        style="background:#1a1a1f; color:white; border:1px solid #333; padding:0.5rem 1rem; border-radius:8px; font-family:inherit; cursor:pointer;">
+                        <option value="hot">🔥 Hot</option>
+                        <option value="top">⬆️ Most Upvoted</option>
+                        <option value="new">🆕 Newest First</option>
+                    </select>
+                </div>
+
+                <button id="apply-filters" class="auth-btn btn-primary">Apply Filters</button>
+            </div>
+        </div>
+
+        <div id="loading" style="display:none; text-align:center;">
+            <div class="spinner"></div>
+            <p style="font-size:1.2rem; color:#aaa;">Fetching the freshest memes...</p>
+        </div>
+
+        <div id="feed-container"></div>
+
+        <div id="close-btn" style="display:none; text-align:center; margin-top:3rem;">
+            <button onclick="location.reload()" class="auth-btn btn-secondary">Close Feed</button>
+        </div>
+    </main>
+
+    <script>
+        let allMemes = [];
+        let currentUser = null;
+        let userFavorites = new Set();
+        let currentFilters = {
+            mediaType: 'all',
+            sortBy: 'hot'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Auth Actions
+            document.getElementById('logout-btn').onclick = logout;
+            document.getElementById('my-favorites-btn').onclick = loadFavorites;
+
+            // Feed Actions
+            document.getElementById('load-btn').onclick = () => {
+                document.getElementById('load-btn').style.display = 'none';
+                loadMemes();
+            };
+
+            document.getElementById('apply-filters').onclick = () => {
+                currentFilters.mediaType = document.getElementById('media-filter').value;
+                currentFilters.sortBy = document.getElementById('sort-filter').value;
+                renderMemes();
+            };
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/current-user');
+                const data = await res.json();
+                if (data.authenticated) {
+                    currentUser = data.user;
+                    updateAuthUI();
+                    fetchFavorites();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateAuthUI() {
+            if (currentUser) {
+                document.getElementById('user-logged-out').style.display = 'none';
+                document.getElementById('user-logged-in').style.display = 'flex';
+                document.getElementById('username-display').textContent = `Hi, ${currentUser.name}`;
+                if (currentUser.picture) {
+                    document.getElementById('user-avatar').src = currentUser.picture;
+                }
+            } else {
+                document.getElementById('user-logged-out').style.display = 'flex';
+                document.getElementById('user-logged-in').style.display = 'none';
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            currentUser = null;
+            userFavorites.clear();
+            updateAuthUI();
+            location.reload();
+        }
+
+        async function fetchFavorites() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch('/api/favorites');
+                const data = await res.json();
+                userFavorites = new Set(data.map(f => f.meme_id));
+                // Re-render to update heart icons
+                if (allMemes.length > 0) renderMemes();
+            } catch (e) { console.error(e); }
+        }
+
+        async function toggleFavorite(meme, btn) {
+            if (!currentUser) {
+                document.getElementById('login-modal').style.display = 'flex';
+                return;
+            }
+
+            const isFav = userFavorites.has(meme.id);
+
+            if (isFav) {
+                // Find fav ID (simplified for this demo, ideally we store mapping)
+                // For now, we'll just re-fetch or handle optimistically
+                // In a real app, we'd need the favorite ID to delete
+                alert("To remove favorites, please go to 'My Favorites' page");
+            } else {
+                try {
+                    const res = await fetch('/api/favorites', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            meme_id: meme.id,
+                            title: meme.title,
+                            url: meme.url,
+                            is_video: meme.is_video,
+                            source: meme.source
+                        })
+                    });
+                    if (res.ok) {
+                        userFavorites.add(meme.id);
+                        btn.classList.add('active');
+                        btn.innerHTML = '❤️';
+                    }
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        async function loadFavorites() {
+            if (!currentUser) return;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('feed-container').innerHTML = '';
+            document.getElementById('filter-section').style.display = 'none';
+            document.getElementById('load-btn').style.display = 'none';
+
+            try {
+                const res = await fetch('/api/favorites');
+                allMemes = await res.json();
+
+                // Convert favorite format to meme format if needed
+                // (Our backend returns compatible format)
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('close-btn').style.display = 'block';
+
+                if (allMemes.length === 0) {
+                    document.getElementById('feed-container').innerHTML = '<p style="text-align:center; padding:3rem;">You haven\'t saved any favorites yet!</p>';
+                } else {
+                    renderMemes();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadMemes() {
+            const loading = document.getElementById('loading');
+            const feedContainer = document.getElementById('feed-container');
+            const filterSection = document.getElementById('filter-section');
+            const closeBtn = document.getElementById('close-btn');
+
+            loading.style.display = 'block';
+            feedContainer.innerHTML = '';
+            filterSection.style.display = 'none';
+            closeBtn.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/trending-memes');
+                allMemes = await response.json();
+
+                loading.style.display = 'none';
+                filterSection.style.display = 'block';
+                closeBtn.style.display = 'block';
+
+                if (allMemes.length === 0) {
+                    feedContainer.innerHTML = '<p style="color:white; text-align:center; padding:3rem;">No memes found. Try again later!</p>';
+                    return;
+                }
+
+                renderMemes();
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                feedContainer.innerHTML = '<p style="color:#ff0055; text-align:center; padding:3rem;">Failed to load memes. Please try again.</p>';
+            }
+        }
+
+        function renderMemes() {
+            const container = document.getElementById('feed-container');
+            container.innerHTML = '';
+
+            let filtered = allMemes.filter(meme => {
+                if (currentFilters.mediaType === 'images') return !meme.is_video;
+                if (currentFilters.mediaType === 'videos') return meme.is_video;
+                return true;
+            });
+
+            if (currentFilters.sortBy === 'top') {
+                filtered.sort((a, b) => b.ups - a.ups);
+            } else if (currentFilters.sortBy === 'new') {
+                // Simple shuffle for "new" since we don't have timestamps
+                filtered.sort(() => Math.random() - 0.5);
+            }
+
+            filtered.forEach(meme => {
+                const card = document.createElement('div');
+                card.className = 'meme-card';
+
+                const isFav = userFavorites.has(meme.id);
+                const heartIcon = isFav ? '❤️' : '🤍';
+                const activeClass = isFav ? 'active' : '';
+
+                const mediaContent = meme.is_video ? `
+                    <div style="position:relative;">
+                        <video controls loop playsinline preload="metadata" style="width:100%; max-height:700px;">
+                            <source src="${meme.video_url}" type="video/mp4">
+                        </video>
+                        <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); padding:5px 10px; border-radius:5px; font-size:0.8rem;">
+                            🔇 Silent Video
+                        </div>
+                    </div>
+                ` : `
+                    <img src="${meme.url}" alt="${meme.title}" loading="lazy">
+                `;
+
+                card.innerHTML = `
+                    <div class="meme-header">
+                        <div class="meme-title">${meme.title}</div>
+                        <button class="fav-btn ${activeClass}" onclick='toggleFavorite(${JSON.stringify(meme).replace(/'/g, "&#39;")}, this)'>${heartIcon}</button>
+                    </div>
+                    <div class="meme-media">
+                        ${mediaContent}
+                    </div>
+                    <div class="meme-footer">
+                        <span>👍 ${meme.ups}</span>
+                        <span>${meme.source || 'Viral'}</span>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+
+</html>

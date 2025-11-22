@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Feed</title>
+    <style>
+        body {
+            background: #0a0a0c;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .meme-post {
+            background: #1a1a1f;
+            border: 1px solid #333;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+
+        .meme-media {
+            background: black;
+            padding: 10px;
+            text-align: center;
+        }
+
+        img,
+        video {
+            max-width: 100%;
+            max-height: 500px;
+        }
+
+        button {
+            background: #ff00cc;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        #status {
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Meme Feed Test</h1>
+    <div id="status">Ready to load...</div>
+    <button onclick="loadMemes()">Load Memes</button>
+    <div id="feed"></div>
+
+    <script>
+        async function loadMemes() {
+            const status = document.getElementById('status');
+            const feed = document.getElementById('feed');
+
+            status.textContent = 'Loading...';
+            feed.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/trending-memes');
+                status.textContent = `Response status: ${response.status}`;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const memes = await response.json();
+                status.textContent = `Loaded ${memes.length} memes`;
+
+                console.log('Memes:', memes);
+
+                if (memes.length === 0) {
+                    feed.innerHTML = '<p>No memes found!</p>';
+                    return;
+                }
+
+                memes.forEach((meme, index) => {
+                    const post = document.createElement('div');
+                    post.className = 'meme-post';
+
+                    let mediaHTML = '';
+                    if (meme.is_video && meme.video_url) {
+                        mediaHTML = `<video controls muted style="max-width:100%; max-height:400px;">
+                            <source src="${meme.video_url}" type="video/mp4">
+                        </video>`;
+                    } else {
+                        mediaHTML = `<img src="${meme.url}" style="max-width:100%; max-height:400px;">`;
+                    }
+
+                    post.innerHTML = `
+                        <h3>${index + 1}. ${meme.title}</h3>
+                        <p>By: @${meme.author} | Upvotes: ${meme.ups}</p>
+                        <div class="meme-media">${mediaHTML}</div>
+                        <p><a href="${meme.permalink}" target="_blank" style="color: #00d2ff;">View on Reddit</a></p>
+                    `;
+
+                    feed.appendChild(post);
+                });
+
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>
