@@ -107,10 +107,13 @@ class Favorite(db.Model):
 def load_user(user_email):
     return User.query.get(user_email)
 
-# Create tables
+# Initialize database tables
+# IMPORTANT: db.create_all() only creates tables if they DON'T already exist.
+# It will NOT drop or recreate existing tables, so user data is preserved.
+# This is safe to run on every app startup.
 with app.app_context():
     db.create_all()
-    print("Database tables created!")
+    print("✅ Database tables initialized (existing data preserved)")
 
 # Routes
 @app.route('/')
