@@ -162,7 +162,7 @@
             border-radius: 15px;
             max-width: 400px;
             width: 90%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             animation: slideUp 0.3s ease;
         }
@@ -183,22 +183,22 @@
             width: 100%;
             padding: 0.75rem;
             margin-bottom: 1rem;
-            background: #0a0a0c;
-            border: 1px solid #333;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            color: white;
+            color: var(--text-color);
             font-family: inherit;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #00d2ff;
+            border-color: var(--secondary-color);
         }
 
         /* Meme Feed */
         .meme-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 15px;
             overflow: hidden;
             margin-bottom: 2rem;
@@ -212,7 +212,7 @@
 
         .meme-header {
             padding: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
