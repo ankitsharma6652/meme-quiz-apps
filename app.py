@@ -516,9 +516,11 @@ def fetch_video_memes():
 def get_memes():
     # 1. Get Images from Meme API
     images = fetch_reddit_memes()
+    print(f"DEBUG: Fetched {len(images)} images")
     
     # 2. Get Videos from Reddit directly
     videos = fetch_video_memes()
+    print(f"DEBUG: Fetched {len(videos)} videos")
     
     # 3. Combine and Shuffle
     all_memes = images + videos
