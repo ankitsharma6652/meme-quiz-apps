@@ -797,7 +797,15 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('feed-container').innerHTML = '';
             document.getElementById('filter-section').style.display = 'none';
-            document.getElementById('load-btn').style.display = 'none';
+
+            // Hide other modes
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('generator-container').style.display = 'none';
+
+            // Ensure buttons are visible
+            document.getElementById('load-btn').style.display = 'inline-block';
+            document.getElementById('start-quiz-btn').style.display = 'inline-block';
+            document.getElementById('create-btn').style.display = 'inline-block';
 
             try {
                 const res = await fetch('/api/favorites', {
@@ -977,6 +985,15 @@
                 feedContainer.innerHTML = '';
                 filterSection.style.display = 'none';
                 closeBtn.style.display = 'none';
+
+                // Hide other modes
+                document.getElementById('quiz-container').style.display = 'none';
+                document.getElementById('generator-container').style.display = 'none';
+
+                // Ensure buttons are visible
+                document.getElementById('load-btn').style.display = 'inline-block';
+                document.getElementById('start-quiz-btn').style.display = 'inline-block';
+                document.getElementById('create-btn').style.display = 'inline-block';
             }
 
             if (loadMoreBtn) {
@@ -1250,11 +1267,16 @@
             document.getElementById('current-score').innerText = '0';
 
             // Hide feed elements
+            // Hide feed elements
             document.getElementById('feed-container').innerHTML = '';
             document.getElementById('filter-section').style.display = 'none';
-            document.getElementById('load-btn').style.display = 'none';
-            document.getElementById('start-quiz-btn').style.display = 'none';
             document.getElementById('load-more-btn').style.display = 'none';
+            document.getElementById('generator-container').style.display = 'none';
+
+            // Ensure buttons are visible
+            document.getElementById('load-btn').style.display = 'inline-block';
+            document.getElementById('start-quiz-btn').style.display = 'inline-block';
+            document.getElementById('create-btn').style.display = 'inline-block';
 
             // Show close button to exit
             const closeBtn = document.getElementById('close-btn');
@@ -1367,13 +1389,16 @@
 
         async function showGenerator() {
             // Hide other sections
+            // Hide other sections
             document.getElementById('feed-container').innerHTML = '';
             document.getElementById('filter-section').style.display = 'none';
-            document.getElementById('load-btn').style.display = 'none';
-            document.getElementById('start-quiz-btn').style.display = 'none';
-            document.getElementById('create-btn').style.display = 'none';
-            document.getElementById('quiz-container').style.display = 'none';
             document.getElementById('load-more-btn').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'none';
+
+            // Ensure buttons are visible
+            document.getElementById('load-btn').style.display = 'inline-block';
+            document.getElementById('start-quiz-btn').style.display = 'inline-block';
+            document.getElementById('create-btn').style.display = 'inline-block';
 
             // Show generator
             document.getElementById('generator-container').style.display = 'block';
