@@ -103,6 +103,17 @@ class Favorite(db.Model):
     source = db.Column(db.String(50))
     saved_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class LoginHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=False)
+    login_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    ip_address = db.Column(db.String(45))  # IPv6 can be up to 45 chars
+    user_agent = db.Column(db.String(500))
+    login_method = db.Column(db.String(50), default='google')  # 'google', 'facebook', etc.
+    
+    # Relationship to User
+    user = db.relationship('User', backref=db.backref('login_history', lazy=True))
+
 @login_manager.user_loader
 def load_user(user_email):
     return User.query.get(user_email)
@@ -165,7 +176,17 @@ def authorize_google():
         session.permanent = True
         session['user_email'] = user.email
         
-        print(f"User {user.email} logged in successfully!")
+        # Record login history
+        login_record = LoginHistory(
+            user_email=user.email,
+            ip_address=request.headers.get('X-Forwarded-For', request.remote_addr),
+            user_agent=request.headers.get('User-Agent', 'Unknown'),
+            login_method='google'
+        )
+        db.session.add(login_record)
+        db.session.commit()
+        
+        print(f"✅ User {user.email} logged in successfully! Login recorded.")
         
         return redirect('/')
         
