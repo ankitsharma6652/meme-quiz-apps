@@ -26,6 +26,13 @@ jobs:
             -d '{"executable": "bash", "working_directory": "/home/'$PA_USERNAME'/meme-quiz-apps"}' \
             > console.json
           
+          # Debug: Print response if it's not valid JSON
+          if ! jq -e . console.json >/dev/null 2>&1; then
+            echo "❌ API Error Response:"
+            cat console.json
+            exit 1
+          fi
+          
           CONSOLE_ID=$(jq -r '.id' console.json)
           
           # Send git pull command
