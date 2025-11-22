@@ -2002,6 +2002,27 @@
         memeCanvas.addEventListener('mouseup', handleCanvasInteractionEnd);
         memeCanvas.addEventListener('mouseout', handleCanvasInteractionEnd);
 
+        // Mouse wheel for resizing selected object
+        memeCanvas.addEventListener('wheel', (e) => {
+            if (selectedObjectIndex !== -1) {
+                e.preventDefault();
+                const obj = canvasObjects[selectedObjectIndex];
+
+                if (obj.type === 'image') {
+                    // Resize image
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
+                    obj.width *= delta;
+                    obj.height *= delta;
+                    drawMeme();
+                } else if (obj.type === 'text') {
+                    // Resize text
+                    const delta = e.deltaY > 0 ? -5 : 5;
+                    obj.size = Math.max(20, Math.min(200, obj.size + delta));
+                    drawMeme();
+                }
+            }
+        }, { passive: false });
+
         // Touch support
         memeCanvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -2172,6 +2193,24 @@
                         ctx.setLineDash([5, 5]);
                         ctx.strokeRect(obj.x - width / 2 - 5, obj.y - height / 2 - 5, width + 10, height + 10);
                         ctx.setLineDash([]);
+
+                        // Draw resize handles (corners)
+                        const handleSize = 8;
+                        ctx.fillStyle = '#00d2ff';
+                        // Top-left
+                        ctx.fillRect(obj.x - width / 2 - 5 - handleSize / 2, obj.y - height / 2 - 5 - handleSize / 2, handleSize, handleSize);
+                        // Top-right
+                        ctx.fillRect(obj.x + width / 2 + 5 - handleSize / 2, obj.y - height / 2 - 5 - handleSize / 2, handleSize, handleSize);
+                        // Bottom-left
+                        ctx.fillRect(obj.x - width / 2 - 5 - handleSize / 2, obj.y + height / 2 + 5 - handleSize / 2, handleSize, handleSize);
+                        // Bottom-right
+                        ctx.fillRect(obj.x + width / 2 + 5 - handleSize / 2, obj.y + height / 2 + 5 - handleSize / 2, handleSize, handleSize);
+
+                        // Add hint text
+                        ctx.fillStyle = '#00d2ff';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Scroll to resize', obj.x, obj.y + height / 2 + 25);
                     }
                 });
 
@@ -2182,7 +2221,7 @@
                         textControls.style.display = 'flex';
                         // Update label based on type
                         const label = textControls.querySelector('span');
-                        if (label) label.innerText = canvasObjects[selectedObjectIndex].type === 'text' ? 'Text Selected' : 'Sticker Selected';
+                        if (label) label.innerText = canvasObjects[selectedObjectIndex].type === 'text' ? 'Text Selected (Scroll to resize)' : 'Image Selected (Scroll to resize)';
                     } else {
                         textControls.style.display = 'none';
                     }
